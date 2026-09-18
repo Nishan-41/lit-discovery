@@ -5,7 +5,7 @@
 ### The Open-Source Scientific Literature Discovery & Research Intelligence Platform
 **An open-source, local-first alternative to Elicit, SciSpace, Connected Papers, and Consensus.**
 
-[![CI Test Suite](https://github.com/rehan/lit-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/rehan/lit-discovery/actions)
+[![CI Test Suite](https://github.com/Nishan-41/lit-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/Nishan-41/lit-discovery/actions)
 [![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688.svg)](https://fastapi.tiangolo.com)
@@ -131,7 +131,7 @@ Trace the evolutionary network of scientific ideas:
 
 ```bash
 # Clone the repository
-git clone https://github.com/rehan/lit-discovery.git
+git clone https://github.com/Nishan-41/lit-discovery.git
 cd lit-discovery
 
 # Install in editable mode
@@ -283,7 +283,7 @@ If you use LitDiscovery in your research, please cite:
   author = {Rehan and Research Contributors},
   title = {LitDiscovery: Open-Source Scientific Literature Discovery and Research Intelligence Platform},
   year = {2026},
-  url = {https://github.com/rehan/lit-discovery},
+  url = {https://github.com/Nishan-41/lit-discovery},
   version = {1.0.0}
 }
 ```

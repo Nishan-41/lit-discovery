@@ -55,10 +55,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/rehan/lit-discovery"
-Documentation = "https://github.com/rehan/lit-discovery#readme"
-Repository = "https://github.com/rehan/lit-discovery.git"
-"Bug Tracker" = "https://github.com/rehan/lit-discovery/issues"
+Homepage = "https://github.com/Nishan-41/lit-discovery"
+Documentation = "https://github.com/Nishan-41/lit-discovery#readme"
+Repository = "https://github.com/Nishan-41/lit-discovery.git"
+"Bug Tracker" = "https://github.com/Nishan-41/lit-discovery/issues"
 
 [project.scripts]
 lit-discovery = "lit_discovery.cli:main"

@@ -4,7 +4,7 @@ We welcome contributions to expand academic search coverage, citation analytics,
 
 ## Development Setup
 ```bash
-git clone https://github.com/rehan/lit-discovery.git
+git clone https://github.com/Nishan-41/lit-discovery.git
 cd lit-discovery
 pip install -e .[dev]
 pytest tests/
