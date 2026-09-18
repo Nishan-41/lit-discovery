@@ -138,10 +138,19 @@ def fetch_arxiv_literature(query_text, limit=5):
                 year = int(published[:4]) if published else None
                 authors = [author.find("atom:name", ns).text for author in entry.findall("atom:author", ns)]
                 pdf_url = arxiv_id_url.replace("abs", "pdf") + ".pdf"
+                
+                raw_id = re.sub(r'v\d+$', '', arxiv_id_url.split('/')[-1])
+                doi_elem = entry.find("{http://arxiv.org/schemas/atom}doi")
+                if doi_elem is None:
+                    doi_elem = entry.find("arxiv:doi", {"arxiv": "http://arxiv.org/schemas/atom"})
+                doi_val = f"https://doi.org/{doi_elem.text.strip()}" if (doi_elem is not None and doi_elem.text) else f"https://doi.org/10.48550/arXiv.{raw_id}"
+
                 articles.append({
                     "engine": "arXiv Preprints",
                     "title": title,
-                    "doi": arxiv_id_url,
+                    "doi": doi_val,
+                    "arxiv_id": raw_id,
+                    "arxiv_url": arxiv_id_url,
                     "authors": authors[:5],
                     "year": year,
                     "abstract": abstract,

@@ -508,13 +508,25 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
     function renderGraphResults(data) {
       if (data.status !== 'success') {
-        alert('Could not resolve graph: ' + (data.error || data.message || 'Unknown error'));
+        const resultsEl = document.getElementById('graph-results');
+        const banner = document.getElementById('graph-seed-banner');
+        banner.innerHTML = `
+          <div class="flex items-center gap-3 text-rose-400">
+            <i class="fa-solid fa-circle-exclamation text-lg"></i>
+            <div>
+              <h4 class="font-bold text-sm">Could Not Resolve Citation Graph</h4>
+              <p class="text-xs text-slate-400 mt-0.5">${escapeHtml(data.error || data.message || 'The specified seed query or paper could not be resolved.')}</p>
+            </div>
+          </div>
+        `;
+        document.getElementById('graph-works-list').innerHTML = '';
+        resultsEl.classList.remove('hidden');
         return;
       }
       const seed = data.seed_paper || data.seed_work || {};
       const banner = document.getElementById('graph-seed-banner');
       banner.innerHTML = `
-        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Seed Paper</span>
+        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-400">Seed Paper Resolved</span>
         <h4 class="font-bold text-slate-100 text-sm mt-1">${escapeHtml(seed.title || 'Seed Work')}</h4>
         <div class="flex items-center gap-3 text-xs text-slate-400 mt-1">
           <span>${seed.year ? seed.year : ''}</span>
@@ -525,30 +537,40 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
       const list = document.getElementById('graph-works-list');
       list.innerHTML = '';
-      (data.connected_works || []).forEach(w => {
-        const card = document.createElement('div');
-        card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-2.5';
-        const sc = w.smart_citations || {};
-        let scBadge = '';
-        if (sc.total_citations > 0) {
-          scBadge = `<span class="text-xs text-slate-400">scite.ai: <b class="text-emerald-400">${sc.supporting || 0} Supp</b> / <b class="text-rose-400">${sc.contrasting || 0} Cont</b></span>`;
-        }
-        card.innerHTML = `
-          <div class="flex items-start justify-between gap-3">
-            <h5 class="font-semibold text-slate-200 text-sm leading-snug">${escapeHtml(w.title)}</h5>
-            <span class="text-xs text-slate-400">${w.year || ''}</span>
-          </div>
-          <p class="text-xs text-slate-400">${(w.authors || []).join(', ') || 'Unknown Authors'}</p>
-          <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-800">
-            <div>${scBadge}</div>
-            <div class="flex items-center gap-2">
-              ${w.doi ? `<a href="${w.doi}" target="_blank" class="text-slate-300 hover:text-white"><i class="fa-solid fa-arrow-up-right-from-square"></i> DOI</a>` : ''}
-              ${w.open_access_pdf ? `<a href="${w.open_access_pdf}" target="_blank" class="text-emerald-400 hover:underline"><i class="fa-solid fa-file-pdf"></i> PDF</a>` : ''}
-            </div>
+      if (!data.connected_works || data.connected_works.length === 0) {
+        list.innerHTML = `
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-8 text-center text-slate-400 text-xs flex flex-col items-center gap-2">
+            <i class="fa-solid fa-circle-info text-slate-500 text-2xl"></i>
+            <p class="font-medium text-slate-300 text-sm">No connected works found in <b>${escapeHtml(data.mode || 'this')}</b> mode.</p>
+            <p class="text-slate-500 max-w-md">This can occur for recent preprints without forward citations or indexed references. Try switching the mode to <b>Co-Citations (Connected Papers)</b>.</p>
           </div>
         `;
-        list.appendChild(card);
-      });
+      } else {
+        (data.connected_works || []).forEach(w => {
+          const card = document.createElement('div');
+          card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-2.5';
+          const sc = w.smart_citations || {};
+          let scBadge = '';
+          if (sc.total_citations > 0) {
+            scBadge = `<span class="text-xs text-slate-400">scite.ai: <b class="text-emerald-400">${sc.supporting || 0} Supp</b> / <b class="text-rose-400">${sc.contrasting || 0} Cont</b></span>`;
+          }
+          card.innerHTML = `
+            <div class="flex items-start justify-between gap-3">
+              <h5 class="font-semibold text-slate-200 text-sm leading-snug">${escapeHtml(w.title)}</h5>
+              <span class="text-xs text-slate-400">${w.year || ''}</span>
+            </div>
+            <p class="text-xs text-slate-400">${(w.authors || []).join(', ') || 'Unknown Authors'}</p>
+            <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-800">
+              <div>${scBadge}</div>
+              <div class="flex items-center gap-2">
+                ${w.doi ? `<a href="${w.doi}" target="_blank" class="text-slate-300 hover:text-white"><i class="fa-solid fa-arrow-up-right-from-square"></i> DOI</a>` : ''}
+                ${w.open_access_pdf ? `<a href="${w.open_access_pdf}" target="_blank" class="text-emerald-400 hover:underline"><i class="fa-solid fa-file-pdf"></i> PDF</a>` : ''}
+              </div>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+      }
 
       document.getElementById('graph-results').classList.remove('hidden');
     }

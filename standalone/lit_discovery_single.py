@@ -184,13 +184,24 @@ def fetch_arxiv(query, limit=5):
                 title = entry.find("atom:title", ns).text.strip().replace("\n", " ") if entry.find("atom:title", ns) is not None else ""
                 summary = entry.find("atom:summary", ns).text.strip() if entry.find("atom:summary", ns) is not None else ""
                 doi_elem = entry.find("arxiv:doi", ns)
-                doi = f"https://doi.org/{doi_elem.text.strip()}" if doi_elem is not None else None
-                authors = [a.find("atom:name", ns).text.strip() for a in entry.findall("atom:author", ns) if a.find("atom:name", ns) is not None]
                 pdf_url = None
                 for link in entry.findall("atom:link", ns):
                     if link.attrib.get("title") == "pdf":
                         pdf_url = link.attrib.get("href")
                         break
+                
+                raw_id = None
+                if pdf_url:
+                    raw_id = re.sub(r'v\d+$', '', pdf_url.split('/')[-1].replace('.pdf', ''))
+                
+                if doi_elem is not None and doi_elem.text:
+                    doi = f"https://doi.org/{doi_elem.text.strip()}"
+                elif raw_id:
+                    doi = f"https://doi.org/10.48550/arXiv.{raw_id}"
+                else:
+                    doi = None
+
+                authors = [a.find("atom:name", ns).text.strip() for a in entry.findall("atom:author", ns) if a.find("atom:name", ns) is not None]
                 pub = entry.find("atom:published", ns)
                 year = int(pub.text[:4]) if pub is not None and len(pub.text) >= 4 else None
                 res.append({

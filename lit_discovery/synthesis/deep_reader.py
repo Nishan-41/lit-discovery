@@ -58,14 +58,29 @@ def deep_read_pdf(target_doi_or_url, max_pages=30):
     if fitz is None:
         return {"status": "error", "error": "PyMuPDF (fitz) is not installed."}
     pdf_url = target_doi_or_url
-    if "10." in target_doi_or_url and not target_doi_or_url.startswith("http"):
+    # 1. Handle arXiv URLs and arXiv DOIs directly
+    if "arxiv.org/abs/" in target_doi_or_url:
+        pdf_url = target_doi_or_url.replace("arxiv.org/abs/", "arxiv.org/pdf/")
+        if not pdf_url.endswith(".pdf"):
+            pdf_url += ".pdf"
+    elif "10.48550/arxiv." in target_doi_or_url.lower():
+        m_ax = re.search(r'10\.48550/arxiv\.([0-9]{4}\.[0-9]{4,5}|[a-z\-]+/[0-9]{7})', target_doi_or_url, re.I)
+        if m_ax:
+            pdf_url = f"https://arxiv.org/pdf/{m_ax.group(1)}.pdf"
+    elif "10." in target_doi_or_url and not target_doi_or_url.startswith("http"):
         pdf_url = resolve_unpaywall_pdf(target_doi_or_url)
         if not pdf_url:
             return {"status": "not_found", "message": f"No open-access PDF could be resolved for DOI: {target_doi_or_url}"}
     elif target_doi_or_url.startswith("https://doi.org/"):
-        pdf_url = resolve_unpaywall_pdf(target_doi_or_url.replace("https://doi.org/", ""))
-        if not pdf_url:
-            return {"status": "not_found", "message": f"No open-access PDF could be resolved for DOI: {target_doi_or_url}"}
+        doi_clean = target_doi_or_url.replace("https://doi.org/", "")
+        if "10.48550/arxiv." in doi_clean.lower():
+            m_ax = re.search(r'10\.48550/arxiv\.([0-9]{4}\.[0-9]{4,5}|[a-z\-]+/[0-9]{7})', doi_clean, re.I)
+            if m_ax:
+                pdf_url = f"https://arxiv.org/pdf/{m_ax.group(1)}.pdf"
+        else:
+            pdf_url = resolve_unpaywall_pdf(doi_clean)
+            if not pdf_url:
+                return {"status": "not_found", "message": f"No open-access PDF could be resolved for DOI: {target_doi_or_url}"}
     try:
         r = requests.get(pdf_url, headers=HEADERS, timeout=25)
         if r.status_code != 200:

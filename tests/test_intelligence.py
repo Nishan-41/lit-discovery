@@ -32,3 +32,16 @@ def test_explore_citation_graph_openalex():
     assert "seed_paper" in res
     assert "connected_works" in res
     assert len(res["connected_works"]) <= 3
+
+
+def test_explore_citation_graph_arxiv_url():
+    # User-reported arXiv seed URL
+    res = explore_citation_graph("http://arxiv.org/abs/1409.4962v1", mode="related", limit=3)
+
+    assert res is not None
+    assert res.get("status") == "success"
+    assert "seed_paper" in res
+    assert res["seed_paper"]["openalex_id"] == "W2952052407"
+    assert "connected_works" in res
+    assert len(res["connected_works"]) <= 3
+
