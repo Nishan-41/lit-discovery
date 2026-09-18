@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use Lit-Discovery in your research, please cite it as below."
+title: "Lit-Discovery: An Open-Source Scientific Literature Discovery, Empirical Consensus & Research Intelligence Platform"
+authors:
+  - family-names: "Rehan"
+    given-names: "Lab"
+    affiliation: "University of Arizona"
+version: 1.0.0
+date-released: 2026-09-18
+url: "https://github.com/rehan/lit-discovery"
+license: MIT
+keywords:
+  - "literature discovery"
+  - "academic search"
+  - "smart citations"
+  - "consensus verification"
+  - "connected papers"
+  - "citation network"
+  - "elicit"
+  - "scispace"
+  - "open research"
