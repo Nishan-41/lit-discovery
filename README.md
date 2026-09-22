@@ -13,6 +13,7 @@
 [![Engines](https://img.shields.io/badge/Academic%20Engines-12%20Federated-success.svg)](#12-federated-academic-engines)
 [![scite.ai](https://img.shields.io/badge/scite.ai-Smart%20Citations-purple.svg)](https://scite.ai)
 [![Zotero](https://img.shields.io/badge/Zotero-BibTeX%20%26%20RIS-red.svg)](https://www.zotero.org)
+[![Materials DBs](https://img.shields.io/badge/Materials%20DBs-OQMD%20%7C%20C2DB%20%7C%20MOFdb%20%7C%20MP-blueviolet.svg)](#-zero-authentication-structural-materials-subsystem)
 
 </div>
 
@@ -174,7 +175,11 @@ lit-discovery graph "10.1038/s41563-022-01195-4" --mode related --limit 6
 # 4. Stream an open-access PDF into memory and extract methodology & recipes
 lit-discovery read "10.1038/nature12373" --pages 20
 
-# 5. Launch the interactive browser Web UI
+# 5. Query zero-authentication structural materials repositories (OQMD, C2DB, MOFdb, MP)
+lit-discovery materials --formula "MoS2"
+lit-discovery materials --mof "UiO-66"
+
+# 6. Launch the interactive browser Web UI
 lit-discovery ui --port 8000
 ```
 
@@ -251,6 +256,44 @@ export_zotero_references(
     ris_path="library.ris"
 )
 ```
+
+### Zero-Authentication Materials Discovery
+```python
+from lit_discovery import query_all_materials
+
+mat_results = query_all_materials(formula="MoS2", limit=3)
+dbs = mat_results["databases"]
+
+# 1. Materials Project (OPTIMADE v1)
+for m in dbs["materials_project_optimade"].get("materials", []):
+    print(f"MP ID: {m['material_id']}, Formula: {m['formula_pretty']}")
+
+# 2. DTU C2DB (2D Monolayer Materials)
+for m in dbs["c2db_2d_materials"].get("materials", []):
+    print(f"C2DB ID: {m['c2db_id']}, Lattice: {m['lattice_vectors']}")
+
+# 3. Northwestern OQMD
+for m in dbs["oqmd"].get("materials", []):
+    print(f"OQMD Entry: {m['entry_id']}, ΔHf: {m['formation_energy_eV_atom']} eV/atom")
+
+# 4. Northwestern CoRE MOF / MOFdb
+mof_data = query_all_materials(mof_name="UiO-66", limit=3)
+for m in mof_data["databases"]["core_mofdb"].get("mofs", []):
+    print(f"MOF: {m['name']}, Surface Area: {m['surface_area_m2g']} m²/g, Void Frac: {m['void_fraction']}")
+```
+
+---
+
+## 🧱 Zero-Authentication Structural Materials Subsystem
+
+LitDiscovery directly connects literature topics with open materials structures without requiring mandatory API keys:
+
+| Database | Institution | Records / Scope | Key Physical Descriptors |
+| :--- | :--- | :--- | :--- |
+| **OQMD** | Northwestern University | 1M+ Inorganic Crystals | Formation Energy ($\Delta H_f$), Stability (Convex Hull), Prototype, Spacegroup, Unit Cell |
+| **C2DB** | DTU (Denmark) | 2D Monolayer Materials | 2D Topology, Dimension types `[1,1,0]`, Lattice vectors, Stoichiometry |
+| **CoRE MOF / MOFdb** | Northwestern University | Porous Frameworks (MOFs) | Gravimetric & Volumetric Surface Area ($m^2/g$), Pore Limiting Diameter (PLD), Void Fraction |
+| **Materials Project** | LBNL / UC Berkeley | 150k+ Inorganic Crystals | Zero-auth fallback via standardized OPTIMADE v1 protocol for lattice vectors & reduced formulas |
 
 ---
 

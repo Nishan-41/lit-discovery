@@ -140,6 +140,60 @@ def cmd_ui(args):
     run_server(host=args.host, port=args.port)
 
 
+def cmd_materials(args):
+    from lit_discovery.materials import query_all_materials
+    if not (args.formula or args.elements or args.mof):
+        print("Error: Must provide at least one of --formula, --elements, or --mof.")
+        sys.exit(1)
+
+    print(f"[*] Querying zero-authentication materials repositories...")
+    data = query_all_materials(
+        formula=args.formula,
+        elements=args.elements,
+        mof_name=args.mof,
+        limit=args.limit
+    )
+
+    if args.json:
+        print(json.dumps(data, indent=2))
+        return
+
+    dbs = data.get("databases", {})
+    print("\n" + "=" * 60)
+    print("ZERO-AUTHENTICATION MATERIALS DISCOVERY")
+    print("=" * 60)
+
+    mp = dbs.get("materials_project_optimade", {})
+    if mp.get("status") == "success" and mp.get("materials"):
+        print(f"\n[+] Materials Project (OPTIMADE v1) - {len(mp['materials'])} matches:")
+        for m in mp["materials"][:3]:
+            print(f"  • {m.get('material_id')}: {m.get('formula_pretty')} | nsites={m.get('nsites')} | spacegroup={m.get('spacegroup_symbol') or 'N/A'}")
+
+    oqmd = dbs.get("oqmd", {})
+    if oqmd.get("status") == "success" and oqmd.get("materials"):
+        print(f"\n[+] OQMD (Northwestern University) - {len(oqmd['materials'])} matches:")
+        for m in oqmd["materials"][:3]:
+            dhf = f"{m.get('formation_energy_eV_atom'):.3f}" if m.get('formation_energy_eV_atom') is not None else "N/A"
+            stab = f"{m.get('stability_eV_atom'):.3f}" if m.get('stability_eV_atom') is not None else "N/A"
+            print(f"  • Entry #{m.get('entry_id')}: {m.get('name')} | Proto={m.get('prototype')} | Spacegroup={m.get('spacegroup')} | ΔHf={dhf} eV/atom | Stability={stab} eV/atom")
+    elif oqmd.get("status") == "timeout":
+        print("\n[-] OQMD (Northwestern University): Request timed out (large phase space).")
+
+    c2db = dbs.get("c2db_2d_materials", {})
+    if c2db.get("status") == "success" and c2db.get("materials"):
+        print(f"\n[+] C2DB (2D Monolayers - DTU) - {len(c2db['materials'])} matches:")
+        for m in c2db["materials"][:3]:
+            print(f"  • C2DB #{m.get('c2db_id')}: {m.get('chemical_formula')} | Dim={m.get('dimension_types')} | Sites={m.get('nsites')}")
+
+    mof = dbs.get("core_mofdb", {})
+    if mof.get("status") == "success" and mof.get("mofs"):
+        print(f"\n[+] CoRE MOF / MOFdb (Northwestern) - {len(mof['mofs'])} matches:")
+        for m in mof["mofs"][:3]:
+            print(f"  • {m.get('name')} ({m.get('database')}): Surface Area={m.get('surface_area_m2g')} m²/g | Void Fraction={m.get('void_fraction')} | PLD={m.get('pore_limiting_diameter_A')} Å | LCD={m.get('largest_cavity_diameter_A')} Å")
+
+    print("\n" + "=" * 60)
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="lit-discovery",
@@ -172,6 +226,14 @@ def main():
     p_read.add_argument("--pages", type=int, default=30, help="Max pages to inspect (default: 30)")
     p_read.add_argument("--json", action="store_true", help="Output as JSON")
 
+    # Materials
+    p_mat = subparsers.add_parser("materials", help="Query zero-authentication structural materials databases (OQMD, C2DB, CoRE MOF, MP OPTIMADE)")
+    p_mat.add_argument("--formula", help="Chemical formula (e.g. 'TiO2', 'MoS2', 'Fe2O3')")
+    p_mat.add_argument("--elements", help="Comma-separated constituent elements (e.g. 'Ti,O')")
+    p_mat.add_argument("--mof", help="MOF name or porous framework (e.g. 'UiO-66', 'MOF-5')")
+    p_mat.add_argument("--limit", type=int, default=5, help="Max items per database (default: 5)")
+    p_mat.add_argument("--json", action="store_true", help="Output as raw JSON")
+
     # UI
     p_ui = subparsers.add_parser("ui", help="Launch interactive browser Web UI")
     p_ui.add_argument("--host", default="127.0.0.1", help="Host address (default: 127.0.0.1)")
@@ -190,6 +252,8 @@ def main():
         cmd_graph(args)
     elif args.command == "read":
         cmd_read(args)
+    elif args.command == "materials":
+        cmd_materials(args)
     elif args.command == "ui":
         cmd_ui(args)
 

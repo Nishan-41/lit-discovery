@@ -10,6 +10,13 @@ from lit_discovery.intelligence.citation_graph import explore_citation_graph
 from lit_discovery.synthesis.deep_reader import deep_read_pdf, extract_material_properties
 from lit_discovery.synthesis.matrix import generate_synthesis_matrix
 from lit_discovery.exports.zotero import export_zotero_references, fetch_doi_citation_metadata
+from lit_discovery.materials import (
+    query_all_materials,
+    query_materials_project_optimade,
+    query_oqmd,
+    query_c2db,
+    query_mofdb,
+)
 
 __all__ = [
     "search_literature",
@@ -22,4 +29,9 @@ __all__ = [
     "generate_synthesis_matrix",
     "export_zotero_references",
     "fetch_doi_citation_metadata",
+    "query_all_materials",
+    "query_materials_project_optimade",
+    "query_oqmd",
+    "query_c2db",
+    "query_mofdb",
 ]
