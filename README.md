@@ -336,3 +336,7 @@ If you use LitDiscovery in your research, please cite:
 ## 📄 License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+## Codex chemistry/materials skill
+
+The [portable Chem-Mat-Hub skill](codex/chem-mat-hub/README.md) adds chemistry/materials database queries, validated full-text retrieval, PDF/OCR evidence, persistent local paper records and an offline progress graph. Database credentials and research-library files remain local. See [project instructions](AGENTS.md) for research persistence rules.
