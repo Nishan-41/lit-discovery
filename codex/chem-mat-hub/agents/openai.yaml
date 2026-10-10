@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chem-Mat-Hub"
+  short_description: "Chemistry, materials and literature database search"
+  default_prompt: "Use $chem-mat-hub to search chemistry and materials databases with my configured APIs."
