@@ -38,6 +38,9 @@ def isolate_network(monkeypatch, tmp_path):
 
 @pytest.mark.parametrize('source', research.LITERATURE)
 def test_real_adapter_pagination(source, monkeypatch):
+    # Mocked adapters must not depend on developer-machine credentials.
+    monkeypatch.setattr(hub, "SCOPUS_KEY", "test-scopus-key")
+    monkeypatch.setattr(hub, "CORE_KEY", "test-core-key")
     calls = []
     def fake(session, method, url, **kwargs):
         params = dict(parse_qs(urlsplit(url).query))
