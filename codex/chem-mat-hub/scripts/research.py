@@ -415,6 +415,7 @@ def search(hub, runtime, query_text=None, *, query=None, max_results=None, confi
                 (not config.require_all or a['relevance']['all_query_groups_matched'])]
     relevance_excluded = before_relevance - len(selected)
     selected.sort(key=lambda a: a['relevance']['score_percent'], reverse=True)
+    eligible_count=len(selected)
     selected = selected[:config.max_results]
     def enrich(article):
         doi = normalize_doi(article.get('doi'))
@@ -425,7 +426,8 @@ def search(hub, runtime, query_text=None, *, query=None, max_results=None, confi
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         list(pool.map(enrich, selected[:config.enrich]))
     matrix = synthesis(hub, selected)
-    return {'query': query_text, 'search_controls': dataclasses.asdict(config),
+    result = {'query': query_text, 'search_controls': dataclasses.asdict(config),
+            'eligible_articles_before_limit':eligible_count,'results_truncated':eligible_count>len(selected),
             'query_variants': queries, 'raw_records_retrieved': len(articles),
             'total_articles_retrieved': len(merged), 'articles_returned': len(selected),
             'records_excluded_by_metadata_filters': sum(not accepted(a, config) for a in merged),
@@ -434,6 +436,8 @@ def search(hub, runtime, query_text=None, *, query=None, max_results=None, confi
             'pagination': pagination, 'source_diagnostics': runtime.DIAGNOSTICS[offset:],
             'articles': selected, 'synthesis_matrix': matrix['records'],
             'synthesis_table_markdown': matrix['markdown_table']}
+    from diagnostics import attach
+    return attach(result,runtime.SOURCES,requested=config.sources)
 
 
 VALUE = r'[-+]?\d+(?:\.\d+)?(?:\s*[x×*]\s*10\s*\^?\s*[-−]?\d+|[eE][-+]?\d+)?'
@@ -639,20 +643,27 @@ def install(hub, runtime):
     # Assign a plain function; assigning a callable object alone does not bind Session.
     requests.sessions.Session.request = lambda session, method, url, **kwargs: transport(session, method, url, **kwargs)
     from fulltext import resolve_unpaywall_pdf
-    hub.resolve_unpaywall_pdf = resolve_unpaywall_pdf
+    hub.resolve_unpaywall_pdf = runtime.wrap('unpaywall',resolve_unpaywall_pdf,None)
     hub._original_extract = hub.extract_material_properties
     hub._original_synthesis = hub.generate_synthesis_matrix
     hub.extract_material_properties = lambda text: properties(hub, text)
     hub.generate_synthesis_matrix = lambda articles: synthesis(hub, articles)
     hub.query_research_literature = lambda query_text=None, **kwargs: search(hub, runtime, query_text, **kwargs)
-    hub.deep_read_pdf = lambda target, max_pages=None, **kwargs: deep_read(hub, target, max_pages, **kwargs)
+    def read(target, max_pages=None, **kwargs):
+        offset=len(runtime.DIAGNOSTICS)
+        result=deep_read(hub,target,max_pages,**kwargs)
+        result['source_diagnostics']=runtime.DIAGNOSTICS[offset:]
+        from diagnostics import attach
+        return attach(result,runtime.SOURCES)
+    hub.deep_read_pdf = read
     hub.export_zotero_references = lambda articles, bib_path=None, ris_path=None: export_references(hub, articles, bib_path, ris_path)
     original_all = hub.query_all
     def query_all(*args, **kwargs):
         offset = len(runtime.DIAGNOSTICS)
         result = original_all(*args, **kwargs)
         result['source_diagnostics'] = runtime.DIAGNOSTICS[offset:]
-        return result
+        from diagnostics import attach
+        return attach(result,runtime.SOURCES)
     hub.query_all = query_all
     original_graph = hub.explore_citation_graph
     wrapped_graph = runtime.wrap('citation-graph', original_graph, None)
@@ -660,5 +671,6 @@ def install(hub, runtime):
         offset = len(runtime.DIAGNOSTICS)
         result = wrapped_graph(*args, **kwargs)
         result['source_diagnostics'] = runtime.DIAGNOSTICS[offset:]
-        return result
+        from diagnostics import attach
+        return attach(result,runtime.SOURCES)
     hub.explore_citation_graph = graph

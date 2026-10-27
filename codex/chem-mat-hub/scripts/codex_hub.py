@@ -82,10 +82,12 @@ def wrap(name, function, key):
         failed = [r for r in trace if r.get('error_type') or r.get('http_status', 200) >= 400]
         if key and not getattr(hub, key):
             status = 'missing_key'
+        elif name == 'unpaywall' and not os.getenv('CHEM_MAT_HUB_UNPAYWALL_EMAIL') and not trace:
+            status = 'skipped_opt_in'
         elif error:
             status = 'parse_or_runtime_error'
         elif failed:
-            status = 'partial' if result and isinstance(result, list) else 'request_failed'
+            status = 'partial' if result and (isinstance(result,list) or isinstance(result,dict) and result.get('sets_retrieved',0)>0) else 'request_failed'
         elif isinstance(result, dict) and result.get('status') in ('error', 'skipped', 'not_found', 'partial', 'identity_unresolved', 'schema_error'):
             status = result['status']
         elif not result:
@@ -99,8 +101,9 @@ def wrap(name, function, key):
         else:
             status = 'returned_data'
         with LOCK:
+            count = len(result) if isinstance(result,list) else result.get('sets_retrieved') if isinstance(result,dict) else None
             DIAGNOSTICS.append({'source': name, 'status': status, 'requests': trace,
-                                'records': len(result) if isinstance(result, list) else None})
+                                'records': count})
         if failed and isinstance(result, dict) and result.get('status') in ('not_found', 'timeout'):
             result['engine_status'] = result.get('status')
             result['status'] = 'error'
@@ -116,8 +119,10 @@ SEARCH_CONFIG = research.Search()
 research.install(hub, sys.modules[__name__])
 
 
-def query_source(source, query):
+def query_source(source, query, *, probe=False):
     function = getattr(hub, SOURCES[source][0])
+    if source == 'ilthermo' and probe:
+        return function(query,max_sets=1)
     if source in ('materials-project', 'nomad', 'cod', 'aflow', 'oqmd', 'c2db'):
         return function(formula=query)
     return function(query)
@@ -140,6 +145,8 @@ def doctor():
 
 def main():
     global SEARCH_CONFIG
+    with LOCK:
+        DIAGNOSTICS.clear()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--doctor', action='store_true')
     parser.add_argument('--probe', action='store_true', help='Read-only query of every remote source')
@@ -239,7 +246,7 @@ def main():
         result = doctor()
     elif args.probe:
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-            futures = [pool.submit(query_source, name, values[2]) for name, values in SOURCES.items()]
+            futures = [pool.submit(query_source, name, values[2], probe=True) for name, values in SOURCES.items()]
             for future in futures:
                 future.result()
         result = {'configuration': doctor(), 'source_diagnostics': sorted(DIAGNOSTICS, key=lambda d: d['source'])}
@@ -265,7 +272,8 @@ def main():
             sys.argv += ['--export-ris', args.export_ris]
         hub.main()
         if DIAGNOSTICS:
-            print(json.dumps({'source_diagnostics': DIAGNOSTICS}), file=sys.stderr)
+            from diagnostics import attach
+            print(json.dumps(attach({'source_diagnostics':DIAGNOSTICS},SOURCES)), file=sys.stderr)
         return
     if args.fetch_fulltext:
         from fulltext import collect
@@ -273,6 +281,9 @@ def main():
     articles = result.get('articles') or result.get('connected_works') or []
     if args.export_bibtex or args.export_ris:
         result['zotero_export'] = hub.export_zotero_references(articles, args.export_bibtex, args.export_ris)
+    from diagnostics import attach
+    requested=tuple(SOURCES) if args.probe else (args.database,) if args.database else SEARCH_CONFIG.sources if args.literature else ()
+    attach(result,SOURCES,requested=requested)
     persistent = args.literature or args.deep_read or args.seed_doi or (args.database in (*research.LITERATURE, 'ilthermo') if args.database else False)
     if persistent and not args.no_library:
         library=None
@@ -285,6 +296,7 @@ def main():
         finally:
             if library:
                 library.close()
+    attach(result,SOURCES,requested=requested)
     text = json.dumps(result, indent=2, ensure_ascii=False)
     if args.output:
         Path(args.output).parent.mkdir(parents=True,exist_ok=True)

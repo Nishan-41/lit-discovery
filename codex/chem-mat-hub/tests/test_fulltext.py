@@ -158,3 +158,79 @@ def test_network_failure_is_not_subscription_failure(monkeypatch):
 def test_unpaywall_requires_explicit_contact(monkeypatch):
     monkeypatch.delenv('CHEM_MAT_HUB_UNPAYWALL_EMAIL',raising=False)
     assert fulltext.resolve_unpaywall_pdf('10.1234/a') is None
+
+
+@pytest.mark.parametrize('status,reason',[(401,'authentication_required'),(403,'access_forbidden'),(404,'not_found'),(429,'rate_limited'),(503,'server_error')])
+def test_http_failures_have_actionable_distinct_reasons(monkeypatch,status,reason):
+    monkeypatch.setattr(runtime.TRANSPORT,'request',lambda s,m,u,**k:reply(u,'Denied',status=status))
+    _,r=fulltext.retrieve(runtime.hub,'https://publisher.example/main.pdf?token=secret')
+    assert r['access_summary']['outcome']==reason
+    assert r['access_summary']['institutional_entitlement']=='not_verified'
+    assert not r['access_summary']['validated_pdf']
+    assert 'secret' not in json.dumps(r)
+
+
+@pytest.mark.parametrize('markup,reason',[
+    ('<html>Institutional login. Sign in to access</html>','authentication_required'),
+    ('<html>Verify you are human</html>','human_verification_required'),
+    ('<html>Purchase access</html>','purchase_access_page'),
+    ('<html><nav>Sign in</nav><p>Article abstract</p></html>','missing_pdf_link'),
+    ('<script>captchaWidget()</script><p>Article abstract</p>','missing_pdf_link')])
+def test_html_access_classification(monkeypatch,markup,reason):
+    monkeypatch.setattr(runtime.TRANSPORT,'request',lambda s,m,u,**k:reply(u,markup))
+    _,r=fulltext.retrieve(runtime.hub,'https://publisher.example/article')
+    assert r['access_summary']['outcome']==reason
+
+
+@pytest.mark.parametrize('exc,reason',[(requests.ConnectionError('secret'),'connection_failed'),(requests.Timeout('secret'),'timeout'),(requests.exceptions.SSLError('secret'),'tls_error')])
+def test_network_errors_distinct_from_entitlement(monkeypatch,exc,reason):
+    def fail(*a,**k):raise exc
+    monkeypatch.setattr(runtime.TRANSPORT,'request',fail)
+    _,r=fulltext.retrieve(runtime.hub,'https://publisher.example/main.pdf')
+    assert r['status']=='network_error' and r['access_summary']['outcome']==reason
+    assert 'secret' not in json.dumps(r)
+
+
+def test_success_retains_failed_routes(monkeypatch,pdf):
+    monkeypatch.setattr(runtime.hub,'resolve_unpaywall_pdf',lambda _: 'https://repo.example/missing.pdf')
+    def fake(s,m,u,**k):
+        return reply(u,'not found',status=404) if 'repo.example' in u else reply(u,pdf,'application/pdf')
+    monkeypatch.setattr(runtime.TRANSPORT,'request',fake)
+    _,r=fulltext.retrieve(runtime.hub,'10.1234/a','10.1234/a')
+    assert r['access_summary']['outcome']=='validated_pdf'
+    assert 'not_found' in r['access_summary']['reasons']
+
+
+def test_crossref_metadata_failure_retains_http_status(monkeypatch):
+    def fake(s,m,u,**k):
+        return reply(u,'forbidden',status=403) if 'api.crossref.org' in u else reply(u,'<p>Abstract only</p>')
+    monkeypatch.setattr(runtime.TRANSPORT,'request',fake)
+    _,r=fulltext.retrieve(runtime.hub,'10.1234/a','10.1234/a')
+    metadata=next(a for a in r['attempts'] if a['origin']=='crossref_metadata')
+    assert metadata['http_status']==403 and metadata['reason']=='access_forbidden'
+    assert r['status']=='fulltext_unavailable' and r['access_summary']['outcome']=='missing_pdf_link'
+
+
+def test_collection_keeps_failed_oa_and_doi_routes(monkeypatch,tmp_path):
+    def read(target,**kwargs):
+        return {'status':'browser_required','access_summary':{'outcome':'access_forbidden'},
+                'attempts':[{'host':'example.invalid','origin':'provided_url','http_status':403,'reason':'access_forbidden'}]}
+    monkeypatch.setattr(runtime.hub,'deep_read_pdf',read)
+    r=fulltext.collect(runtime.hub,[{'doi':'10.1234/a','open_access_pdf':'https://repo.example/a.pdf'}],tmp_path/'collection',1)
+    assert len(r['records'][0]['collection_routes'])==2 and r['readable']==0
+    saved=json.loads(Path(r['records'][0]['evidence_file']).read_text(encoding='utf-8'))
+    assert len(saved['collection_routes'])==2
+
+
+def test_request_budget_explicit(monkeypatch):
+    monkeypatch.setattr(fulltext,'MAX_REQUESTS',1)
+    monkeypatch.setattr(runtime.TRANSPORT,'request',lambda s,m,u,**k:reply(u,'<meta name="citation_pdf_url" content="/main.pdf">'))
+    _,r=fulltext.retrieve(runtime.hub,'https://publisher.example/article')
+    assert r['access_summary']['request_budget_exhausted']
+
+
+@pytest.mark.parametrize('markup,reason',[('<html>Verify you are human</html>','human_verification_required'),('<html>Institutional login</html>','authentication_required'),('<html>Access denied</html>','access_forbidden')])
+def test_403_body_inspection_distinguishes_actual_page(monkeypatch,markup,reason):
+    monkeypatch.setattr(runtime.TRANSPORT,'request',lambda s,m,u,**k:reply(u,markup,status=403))
+    _,r=fulltext.retrieve(runtime.hub,'https://publisher.example/paper')
+    assert r['attempts'][0]['http_status']==403 and r['access_summary']['outcome']==reason
