@@ -86,7 +86,7 @@ def wrap(name, function, key):
             status = 'parse_or_runtime_error'
         elif failed:
             status = 'partial' if result and isinstance(result, list) else 'request_failed'
-        elif isinstance(result, dict) and result.get('status') in ('error', 'skipped', 'not_found'):
+        elif isinstance(result, dict) and result.get('status') in ('error', 'skipped', 'not_found', 'partial', 'identity_unresolved', 'schema_error'):
             status = result['status']
         elif not result:
             pager = getattr(research.STATE, 'pager', None)
@@ -145,6 +145,9 @@ def main():
     parser.add_argument('--probe', action='store_true', help='Read-only query of every remote source')
     parser.add_argument('--database', choices=SOURCES)
     parser.add_argument('--query')
+    parser.add_argument('--ilthermo-max-sets', type=int, default=50, help='Full ILThermo datasets to fetch; 0 means all exact single-component sets')
+    parser.add_argument('--ilthermo-compound-id', help='Explicit NIST identity when exact name cannot resolve uniquely')
+    parser.add_argument('--ilthermo-formula', help='Expected molecular formula; mismatched dataset rejected')
     parser.add_argument('--literature', help='Search all 12 literature databases')
     parser.add_argument('--output')
     parser.add_argument('--max-results', type=int, default=50)
@@ -183,6 +186,10 @@ def main():
     parser.add_argument('--sync-check', action='store_true')
     parser.add_argument('--sync-upstream', action='store_true', help='Refresh upstream engine while retaining Codex enhancements')
     args, engine_args = parser.parse_known_args()
+    if args.ilthermo_max_sets < 0:
+        parser.error('--ilthermo-max-sets must be >= 0')
+    import thermophysics
+    thermophysics.CONFIG.update(max_sets=args.ilthermo_max_sets, compound_id=args.ilthermo_compound_id, formula=args.ilthermo_formula)
     try:
         SEARCH_CONFIG = research.Search(args.max_results, args.per_source, args.page_size, args.max_pages,
                                        args.year_from, args.year_to, tuple(args.phrase), tuple(args.exclude),
@@ -266,12 +273,12 @@ def main():
     articles = result.get('articles') or result.get('connected_works') or []
     if args.export_bibtex or args.export_ris:
         result['zotero_export'] = hub.export_zotero_references(articles, args.export_bibtex, args.export_ris)
-    persistent = args.literature or args.deep_read or args.seed_doi or (args.database in research.LITERATURE if args.database else False)
+    persistent = args.literature or args.deep_read or args.seed_doi or (args.database in (*research.LITERATURE, 'ilthermo') if args.database else False)
     if persistent and not args.no_library:
         library=None
         try:
             library=Library(library_root)
-            kind='reading' if args.deep_read else 'citation' if args.seed_doi else 'search'
+            kind='reading' if args.deep_read else 'citation' if args.seed_doi else 'properties' if args.database == 'ilthermo' else 'search'
             result['project_library']=library.ingest(result,kind=kind,query=args.deep_read or args.literature or args.query or args.seed_doi,paper_doi=args.paper_doi,asset_role=args.asset_role)
         except Exception as exc:
             result['project_library']={'status':'save_failed','error_type':type(exc).__name__,'message':'Research result returned; project library write failed'}

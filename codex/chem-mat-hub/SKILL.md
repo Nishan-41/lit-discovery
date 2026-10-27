@@ -49,6 +49,18 @@ Dependencies: requests, beautifulsoup4, python-dotenv, pymupdf, CoolProp. FastAP
 
 ## Interpret results
 
+### Identity-checked thermophysical data
+
+`--database ilthermo --query "EMIM TFSI"` retrieves complete numeric tables for up to 50 exact-identity single-component datasets by default. Use `--ilthermo-max-sets 0` for all returned matching sets, or a positive limit for a bounded selection. Limits produce `partial` and `truncated`, never an apparently complete five-record preview. Records preserve raw values, uncertainty fields, temperature, pressure, phase, method, sample notes, reference and reference-state footnotes. ILThermo runs persist in the project library.
+
+Name matching must resolve uniquely. EMIM TFSI/NTf2/Tf2N and EMIM DCA aliases and CAS numbers are recognized. Other compounds require exact normalized names or an explicit `--ilthermo-compound-id`; `--ilthermo-formula` supplies an additional formula check. Every downloaded dataset is checked again for component ID, name and formula. Mixtures and substring-only hits are excluded. Identity resolution failure is not evidence of scientific absence.
+
+Quality flags never silently repair source data. Checks identify malformed/nonfinite/nonpositive physical quantities, differences above 10% across sources at matching recorded conditions, and an approximately 1000-fold mismatch between enthalpy slope and same-reference molar heat capacity. These are screening flags, not scientific validation or statistical significance. Conflicts require sample/method/uncertainty review. Unmatched temperatures, pressures or units are not directly compared.
+
+Evidence types distinguish `database_value`, `metadata_candidate`, `pdf_extraction_candidate`, `verified_paper_table`, `calculation` and `unresolved_conflict`. Downloading or extracting never promotes a record to scientific verification. Explicit verified-table records require source, page, locator and verification note; calculations require method and source inputs. Unresolved conflicts remain attached to raw source records.
+
+Scopus natural-language queries quote chemical punctuation and join terms with AND. HTTP 400 gets one punctuation-normalized fallback; effective query and fallback remain visible in pagination/diagnostics. This can broaden chemistry matching, so inspect returned relevance. Authentication and entitlement failures do not trigger query rewriting; arbitrary server messages are not logged because they can echo credentials.
+
 - Check source diagnostics: HTTP errors, timeouts, missing keys and empty/unparsed responses must not be reported as searches with zero scientific matches. Return useful sources and identify unavailable ones. Use HTTP status and host only in diagnostics; never expose credentials or credential-bearing URLs.
 - Literature returns a configurable number of deduplicated articles from bounded paginated retrieval, not an exhaustive review. Relevance is a transparent title/abstract keyword-group score, not semantic confidence. Report database provenance, DOI/title, evidence type, temperature, composition and units. Cite actual records and papers. Do not treat placeholder abstracts, scite tallies or extraction candidates as verified full-text evidence. Verify critical extracted values in the paper before comparing them.
 - Evidence candidates retain property label, exact value/unit text, page (for PDFs), source, contextual quote and sample-context snippet. Tensile strength is separate from modulus. Temperatures lacking a nearby explicit Tg/Tm/degradation label remain unclassified; do not convert measurement or processing temperatures into stability claims. Labels remain candidates: extraction does not reliably resolve every composition, specimen or characterization method.
