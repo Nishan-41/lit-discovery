@@ -217,6 +217,19 @@ class Transport:
     def __call__(self, session, method, url, **kwargs):
         url = url.replace('http://export.arxiv.org', 'https://export.arxiv.org')
         url, kwargs = self.shaped(url, dict(kwargs))
+        from scopus_query import expression, safe_error_code
+        scopus_search = urlsplit(url).hostname == 'api.elsevier.com' and urlsplit(url).path == '/content/search/scopus'
+        scopus_original = None
+        if scopus_search:
+            params = dict(parse_qsl(urlsplit(url).query))
+            params.update(kwargs.get('params') or {})
+            scopus_original = params.get('query', '')
+            params['query'] = expression(scopus_original)
+            kwargs['params'] = params
+            url = urlunsplit((*urlsplit(url)[:3], '', ''))
+            pager = getattr(STATE, 'pager', None)
+            if pager:
+                pager['effective_query'] = params['query']
         kwargs['verify'] = True
         host = urlsplit(url).hostname
         headers = dict(session.headers)
@@ -255,6 +268,21 @@ class Transport:
                             raise
                         time.sleep(min(2 ** attempt, 5))
                         continue
+                    if scopus_search and response.status_code == 400:
+                        record['initial_http_status'] = 400
+                        record['api_error_code'] = safe_error_code(response)
+                        fallback = expression(scopus_original, simplified=True)
+                        if fallback != kwargs['params']['query']:
+                            kwargs['params'] = dict(kwargs['params'], query=fallback)
+                            record['query_fallback'] = 'punctuation_normalized_AND_terms'
+                            record['attempts'] += 1
+                            response = self.request(session, method, url, **kwargs)
+                            use_cache = False  # A broadened result must not masquerade as primary-query cache.
+                    if scopus_search:
+                        pager = getattr(STATE, 'pager', None)
+                        if pager:
+                            pager['effective_query'] = kwargs['params']['query']
+                            pager['query_fallback'] = record.get('query_fallback')
                     if response.status_code not in (408, 429, 500, 502, 503, 504) or attempt == self.retries:
                         break
                     try:
@@ -348,7 +376,8 @@ def paged(function, source, config, query):
                 stop = 'cursor_exhausted'
                 break
             cursor = next_cursor
-    return found[:config.per_source], {'source': source, 'query': query, 'pages': pages,
+    return found[:config.per_source], {'source': source, 'query': query, 'effective_query': metadata.get('effective_query'),
+                                       'query_fallback': metadata.get('query_fallback'), 'pages': pages,
                                        'records': min(len(found), config.per_source), 'stop_reason': stop}
 
 
@@ -386,6 +415,7 @@ def search(hub, runtime, query_text=None, *, query=None, max_results=None, confi
                 (not config.require_all or a['relevance']['all_query_groups_matched'])]
     relevance_excluded = before_relevance - len(selected)
     selected.sort(key=lambda a: a['relevance']['score_percent'], reverse=True)
+    eligible_count=len(selected)
     selected = selected[:config.max_results]
     def enrich(article):
         doi = normalize_doi(article.get('doi'))
@@ -396,7 +426,8 @@ def search(hub, runtime, query_text=None, *, query=None, max_results=None, confi
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         list(pool.map(enrich, selected[:config.enrich]))
     matrix = synthesis(hub, selected)
-    return {'query': query_text, 'search_controls': dataclasses.asdict(config),
+    result = {'query': query_text, 'search_controls': dataclasses.asdict(config),
+            'eligible_articles_before_limit':eligible_count,'results_truncated':eligible_count>len(selected),
             'query_variants': queries, 'raw_records_retrieved': len(articles),
             'total_articles_retrieved': len(merged), 'articles_returned': len(selected),
             'records_excluded_by_metadata_filters': sum(not accepted(a, config) for a in merged),
@@ -405,6 +436,8 @@ def search(hub, runtime, query_text=None, *, query=None, max_results=None, confi
             'pagination': pagination, 'source_diagnostics': runtime.DIAGNOSTICS[offset:],
             'articles': selected, 'synthesis_matrix': matrix['records'],
             'synthesis_table_markdown': matrix['markdown_table']}
+    from diagnostics import attach
+    return attach(result,runtime.SOURCES,requested=config.sources)
 
 
 VALUE = r'[-+]?\d+(?:\.\d+)?(?:\s*[x×*]\s*10\s*\^?\s*[-−]?\d+|[eE][-+]?\d+)?'
@@ -448,6 +481,8 @@ def evidence(text, *, page=None, source='text', doi=None):
                             'page': page, 'source': source, 'doi': doi,
                             'evidence_quote': quote[:1200],
                             'status': 'candidate_requires_verification' if candidates else 'unclassified',
+                            'evidence_type': 'pdf_extraction_candidate' if source == 'pdf' else 'metadata_candidate',
+                            'scientific_review_status': 'not_reviewed',
                             'sample_context': ' '.join(sentence[max(0, match.start()-160):match.end()+160].split())})
     return records
 
@@ -546,7 +581,8 @@ def deep_read(hub, target, max_pages=None, *, ocr=False, save_pdf=None):
             result['evidence_candidates'].extend(evidence(text, page=index+1, source='pdf', doi=doi))
             try:
                 for table in page.find_tables().tables:
-                    result['tables'].append({'page': index+1, 'bbox': list(table.bbox), 'rows': table.extract(), 'status': 'candidate_requires_verification'})
+                    result['tables'].append({'page': index+1, 'bbox': list(table.bbox), 'rows': table.extract(), 'status': 'candidate_requires_verification',
+                                             'evidence_type': 'pdf_extraction_candidate', 'scientific_review_status': 'not_reviewed'})
             except Exception as exc:
                 result['warnings'].append({'page': index+1, 'issue': 'Table extraction failed', 'error_type': type(exc).__name__})
     finally:
@@ -558,6 +594,8 @@ def deep_read(hub, target, max_pages=None, *, ocr=False, save_pdf=None):
         result['status'] = 'partial'
     full_text = '\n'.join(p['text'] for p in result['pages'])
     result['extracted_properties'] = properties(hub, full_text)
+    result['evidence_type'] = 'pdf_extraction_candidate'
+    result['scientific_review_status'] = 'not_reviewed'
     return result
 
 
@@ -600,23 +638,32 @@ def export_references(hub, articles, bib_path=None, ris_path=None):
 def install(hub, runtime):
     transport = Transport(runtime.REQUEST, runtime.LOCAL)
     runtime.TRANSPORT = transport
+    import thermophysics
+    hub.query_ilthermo = runtime.wrap('ilthermo', thermophysics.query, None)
     # Assign a plain function; assigning a callable object alone does not bind Session.
     requests.sessions.Session.request = lambda session, method, url, **kwargs: transport(session, method, url, **kwargs)
     from fulltext import resolve_unpaywall_pdf
-    hub.resolve_unpaywall_pdf = resolve_unpaywall_pdf
+    hub.resolve_unpaywall_pdf = runtime.wrap('unpaywall',resolve_unpaywall_pdf,None)
     hub._original_extract = hub.extract_material_properties
     hub._original_synthesis = hub.generate_synthesis_matrix
     hub.extract_material_properties = lambda text: properties(hub, text)
     hub.generate_synthesis_matrix = lambda articles: synthesis(hub, articles)
     hub.query_research_literature = lambda query_text=None, **kwargs: search(hub, runtime, query_text, **kwargs)
-    hub.deep_read_pdf = lambda target, max_pages=None, **kwargs: deep_read(hub, target, max_pages, **kwargs)
+    def read(target, max_pages=None, **kwargs):
+        offset=len(runtime.DIAGNOSTICS)
+        result=deep_read(hub,target,max_pages,**kwargs)
+        result['source_diagnostics']=runtime.DIAGNOSTICS[offset:]
+        from diagnostics import attach
+        return attach(result,runtime.SOURCES)
+    hub.deep_read_pdf = read
     hub.export_zotero_references = lambda articles, bib_path=None, ris_path=None: export_references(hub, articles, bib_path, ris_path)
     original_all = hub.query_all
     def query_all(*args, **kwargs):
         offset = len(runtime.DIAGNOSTICS)
         result = original_all(*args, **kwargs)
         result['source_diagnostics'] = runtime.DIAGNOSTICS[offset:]
-        return result
+        from diagnostics import attach
+        return attach(result,runtime.SOURCES)
     hub.query_all = query_all
     original_graph = hub.explore_citation_graph
     wrapped_graph = runtime.wrap('citation-graph', original_graph, None)
@@ -624,5 +671,6 @@ def install(hub, runtime):
         offset = len(runtime.DIAGNOSTICS)
         result = wrapped_graph(*args, **kwargs)
         result['source_diagnostics'] = runtime.DIAGNOSTICS[offset:]
-        return result
+        from diagnostics import attach
+        return attach(result,runtime.SOURCES)
     hub.explore_citation_graph = graph

@@ -1,11 +1,11 @@
-"""Example 3: Connected Papers & Citation Network Snowballing."""
+"""Example 3: OpenAlex citation network traversal."""
 from lit_discovery import explore_citation_graph
 
 def main():
     seed_doi = "10.1039/c9ta01153a"
     print(f"[*] Exploring citation graph around seed: {seed_doi}...")
 
-    # Connected Papers style co-citation exploration
+    # Provider-supplied related works
     graph = explore_citation_graph(seed_doi, mode="related", limit=5)
 
     if graph.get("status") != "success":
@@ -14,7 +14,7 @@ def main():
 
     seed = graph.get("seed_paper", {})
     print(f"\n[+] Seed Work: {seed.get('title')} ({seed.get('year')})")
-    print(f"[+] Discovered {graph.get('total_connected')} bibliographically coupled works:\n")
+    print(f"[+] Discovered {graph.get('total_connected')} related works:\n")
 
     for i, w in enumerate(graph.get("connected_works", []), 1):
         sc = w.get("smart_citations") or {}

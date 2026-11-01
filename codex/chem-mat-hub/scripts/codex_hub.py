@@ -82,11 +82,13 @@ def wrap(name, function, key):
         failed = [r for r in trace if r.get('error_type') or r.get('http_status', 200) >= 400]
         if key and not getattr(hub, key):
             status = 'missing_key'
+        elif name == 'unpaywall' and not os.getenv('CHEM_MAT_HUB_UNPAYWALL_EMAIL') and not trace:
+            status = 'skipped_opt_in'
         elif error:
             status = 'parse_or_runtime_error'
         elif failed:
-            status = 'partial' if result and isinstance(result, list) else 'request_failed'
-        elif isinstance(result, dict) and result.get('status') in ('error', 'skipped', 'not_found'):
+            status = 'partial' if result and (isinstance(result,list) or isinstance(result,dict) and result.get('sets_retrieved',0)>0) else 'request_failed'
+        elif isinstance(result, dict) and result.get('status') in ('error', 'skipped', 'not_found', 'partial', 'identity_unresolved', 'schema_error'):
             status = result['status']
         elif not result:
             pager = getattr(research.STATE, 'pager', None)
@@ -99,8 +101,9 @@ def wrap(name, function, key):
         else:
             status = 'returned_data'
         with LOCK:
+            count = len(result) if isinstance(result,list) else result.get('sets_retrieved') if isinstance(result,dict) else None
             DIAGNOSTICS.append({'source': name, 'status': status, 'requests': trace,
-                                'records': len(result) if isinstance(result, list) else None})
+                                'records': count})
         if failed and isinstance(result, dict) and result.get('status') in ('not_found', 'timeout'):
             result['engine_status'] = result.get('status')
             result['status'] = 'error'
@@ -116,8 +119,10 @@ SEARCH_CONFIG = research.Search()
 research.install(hub, sys.modules[__name__])
 
 
-def query_source(source, query):
+def query_source(source, query, *, probe=False):
     function = getattr(hub, SOURCES[source][0])
+    if source == 'ilthermo' and probe:
+        return function(query,max_sets=1)
     if source in ('materials-project', 'nomad', 'cod', 'aflow', 'oqmd', 'c2db'):
         return function(formula=query)
     return function(query)
@@ -128,7 +133,7 @@ def doctor():
     return {'python': sys.executable,
             'credentials': {k: bool(getattr(hub, k)) for k in keys},
             'dependencies': {m: bool(importlib.util.find_spec(m)) for m in
-                             ['requests', 'bs4', 'dotenv', 'fitz', 'CoolProp', 'fastapi']},
+                             ['requests', 'bs4', 'dotenv', 'fitz', 'CoolProp']},
             'environment_override_configured': bool(os.getenv('CHEM_MAT_HUB_ENV_FILE')),
             'sources': list(SOURCES),
             'cache_directory': str(TRANSPORT.cache_path.parent),
@@ -140,11 +145,16 @@ def doctor():
 
 def main():
     global SEARCH_CONFIG
+    with LOCK:
+        DIAGNOSTICS.clear()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--doctor', action='store_true')
     parser.add_argument('--probe', action='store_true', help='Read-only query of every remote source')
     parser.add_argument('--database', choices=SOURCES)
     parser.add_argument('--query')
+    parser.add_argument('--ilthermo-max-sets', type=int, default=50, help='Full ILThermo datasets to fetch; 0 means all exact single-component sets')
+    parser.add_argument('--ilthermo-compound-id', help='Explicit NIST identity when exact name cannot resolve uniquely')
+    parser.add_argument('--ilthermo-formula', help='Expected molecular formula; mismatched dataset rejected')
     parser.add_argument('--literature', help='Search all 12 literature databases')
     parser.add_argument('--output')
     parser.add_argument('--max-results', type=int, default=50)
@@ -183,6 +193,10 @@ def main():
     parser.add_argument('--sync-check', action='store_true')
     parser.add_argument('--sync-upstream', action='store_true', help='Refresh upstream engine while retaining Codex enhancements')
     args, engine_args = parser.parse_known_args()
+    if args.ilthermo_max_sets < 0:
+        parser.error('--ilthermo-max-sets must be >= 0')
+    import thermophysics
+    thermophysics.CONFIG.update(max_sets=args.ilthermo_max_sets, compound_id=args.ilthermo_compound_id, formula=args.ilthermo_formula)
     try:
         SEARCH_CONFIG = research.Search(args.max_results, args.per_source, args.page_size, args.max_pages,
                                        args.year_from, args.year_to, tuple(args.phrase), tuple(args.exclude),
@@ -232,7 +246,7 @@ def main():
         result = doctor()
     elif args.probe:
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-            futures = [pool.submit(query_source, name, values[2]) for name, values in SOURCES.items()]
+            futures = [pool.submit(query_source, name, values[2], probe=True) for name, values in SOURCES.items()]
             for future in futures:
                 future.result()
         result = {'configuration': doctor(), 'source_diagnostics': sorted(DIAGNOSTICS, key=lambda d: d['source'])}
@@ -258,7 +272,8 @@ def main():
             sys.argv += ['--export-ris', args.export_ris]
         hub.main()
         if DIAGNOSTICS:
-            print(json.dumps({'source_diagnostics': DIAGNOSTICS}), file=sys.stderr)
+            from diagnostics import attach
+            print(json.dumps(attach({'source_diagnostics':DIAGNOSTICS},SOURCES)), file=sys.stderr)
         return
     if args.fetch_fulltext:
         from fulltext import collect
@@ -266,18 +281,22 @@ def main():
     articles = result.get('articles') or result.get('connected_works') or []
     if args.export_bibtex or args.export_ris:
         result['zotero_export'] = hub.export_zotero_references(articles, args.export_bibtex, args.export_ris)
-    persistent = args.literature or args.deep_read or args.seed_doi or (args.database in research.LITERATURE if args.database else False)
+    from diagnostics import attach
+    requested=tuple(SOURCES) if args.probe else (args.database,) if args.database else SEARCH_CONFIG.sources if args.literature else ()
+    attach(result,SOURCES,requested=requested)
+    persistent = args.literature or args.deep_read or args.seed_doi or (args.database in (*research.LITERATURE, 'ilthermo') if args.database else False)
     if persistent and not args.no_library:
         library=None
         try:
             library=Library(library_root)
-            kind='reading' if args.deep_read else 'citation' if args.seed_doi else 'search'
+            kind='reading' if args.deep_read else 'citation' if args.seed_doi else 'properties' if args.database == 'ilthermo' else 'search'
             result['project_library']=library.ingest(result,kind=kind,query=args.deep_read or args.literature or args.query or args.seed_doi,paper_doi=args.paper_doi,asset_role=args.asset_role)
         except Exception as exc:
             result['project_library']={'status':'save_failed','error_type':type(exc).__name__,'message':'Research result returned; project library write failed'}
         finally:
             if library:
                 library.close()
+    attach(result,SOURCES,requested=requested)
     text = json.dumps(result, indent=2, ensure_ascii=False)
     if args.output:
         Path(args.output).parent.mkdir(parents=True,exist_ok=True)

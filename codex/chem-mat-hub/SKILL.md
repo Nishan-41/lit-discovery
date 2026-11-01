@@ -5,7 +5,7 @@ description: Search chemistry, materials, ionic-liquid and literature databases 
 
 # Chem-Mat-Hub for Codex
 
-Use the bundled engine directly through local Python. No Antigravity agent, cloud Action server or OpenAI API key is needed. Existing database APIs and curated data remain available. Resolve script paths relative to this skill directory; use absolute paths in commands when working elsewhere.
+Use the bundled engine directly through local Python. No hosted service or OpenAI API key is needed. Existing database APIs and curated data remain available. Resolve script paths relative to this skill directory; use absolute paths in commands when working elsewhere.
 
 ## Run
 
@@ -45,9 +45,21 @@ Read [database and engineering reference](references/original-skill.md) for deta
 
 The engine loads process environment first, then optional `CHEM_MAT_HUB_ENV_FILE`, then existing `~/.env`. Do not copy or print secret values. Key variables: `MP_API_KEY`, `RSC_API_KEY`, `SCOPUS_API_KEY` / `ELSEVIER_API_KEY`, `CTX_API_KEY` / `EPA_API_KEY`, `S2_API_KEY` / `SEMANTIC_SCHOLAR_API_KEY`, `CORE_API_KEY`. A configured key is not proof of valid authentication or entitlement. Missing Materials Project key uses its OPTIMADE fallback.
 
-Dependencies: requests, beautifulsoup4, python-dotenv, pymupdf, CoolProp. FastAPI and uvicorn are only for the optional retained Action bridge. Keep that bridge stopped unless hosting is requested. Preserve the original Gemini skill and research repository unless edits there are explicitly requested.
+Dependencies: requests, beautifulsoup4, python-dotenv, pymupdf, CoolProp. This distribution provides command-line tools only. Preserve the original Gemini skill and research repository unless edits there are explicitly requested.
 
 ## Interpret results
+
+### Identity-checked thermophysical data
+
+`--database ilthermo --query "EMIM TFSI"` retrieves complete numeric tables for up to 50 exact-identity single-component datasets by default. Use `--ilthermo-max-sets 0` for all returned matching sets, or a positive limit for a bounded selection. Limits produce `partial` and `truncated`, never an apparently complete five-record preview. Records preserve raw values, uncertainty fields, temperature, pressure, phase, method, sample notes, reference and reference-state footnotes. ILThermo runs persist in the project library.
+
+Name matching must resolve uniquely. EMIM TFSI/NTf2/Tf2N and EMIM DCA aliases and CAS numbers are recognized. Other compounds require exact normalized names or an explicit `--ilthermo-compound-id`; `--ilthermo-formula` supplies an additional formula check. Every downloaded dataset is checked again for component ID, name and formula. Mixtures and substring-only hits are excluded. Identity resolution failure is not evidence of scientific absence.
+
+Quality flags never silently repair source data. Checks identify malformed/nonfinite/nonpositive physical quantities, differences above 10% across sources at matching recorded conditions, and an approximately 1000-fold mismatch between enthalpy slope and same-reference molar heat capacity. These are screening flags, not scientific validation or statistical significance. Conflicts require sample/method/uncertainty review. Unmatched temperatures, pressures or units are not directly compared.
+
+Evidence types distinguish `database_value`, `metadata_candidate`, `pdf_extraction_candidate`, `verified_paper_table`, `calculation` and `unresolved_conflict`. Downloading or extracting never promotes a record to scientific verification. Explicit verified-table records require source, page, locator and verification note; calculations require method and source inputs. Unresolved conflicts remain attached to raw source records.
+
+Scopus natural-language queries quote chemical punctuation and join terms with AND. HTTP 400 gets one punctuation-normalized fallback; effective query and fallback remain visible in pagination/diagnostics. This can broaden chemistry matching, so inspect returned relevance. Authentication and entitlement failures do not trigger query rewriting; arbitrary server messages are not logged because they can echo credentials.
 
 - Check source diagnostics: HTTP errors, timeouts, missing keys and empty/unparsed responses must not be reported as searches with zero scientific matches. Return useful sources and identify unavailable ones. Use HTTP status and host only in diagnostics; never expose credentials or credential-bearing URLs.
 - Literature returns a configurable number of deduplicated articles from bounded paginated retrieval, not an exhaustive review. Relevance is a transparent title/abstract keyword-group score, not semantic confidence. Report database provenance, DOI/title, evidence type, temperature, composition and units. Cite actual records and papers. Do not treat placeholder abstracts, scite tallies or extraction candidates as verified full-text evidence. Verify critical extracted values in the paper before comparing them.
@@ -58,11 +70,21 @@ Dependencies: requests, beautifulsoup4, python-dotenv, pymupdf, CoolProp. FastAP
 
 ## Full-text access
 
+Each full-text retrieval includes `access_summary` plus per-route reasons: HTTP 401 authentication, HTTP 403 refusal, human-verification page, purchase-access page, rate limit, connection failure, timeout, TLS error, missing PDF link, invalid/encrypted/oversized PDF, or request-budget exhaustion. HTTP status and requested/final hosts are preserved; raw error messages, credential-bearing query strings, cookies and response headers are not copied into diagnostics. A metadata API failure is separate from a publisher refusal. Neither a sign-in/purchase page nor HTTP 403 establishes whether the user's subscription is valid.
+
+Failed OA and subsequent DOI routes remain in `collection_routes` even when a later download succeeds. Only validated readable PDFs count as retrieval success. A successful download may still report earlier route failures; `institutional_entitlement` stays `not_verified`. The summary suggests the next step without implementing login, CAPTCHA completion or paywall workarounds.
+
+### Per-run diagnostic summary
+
+Structured CLI results, literature searches, PDF reads and citation/broad queries expose `diagnostic_summary`. Each registered source is reported as successful, partial, failed, truncated, unavailable or untested, with original detail statuses, returned-record counts when known, cache state, request counts, stop reasons and recovered-query errors. Untested sources are never assumed healthy; configured credentials alone do not count as network verification. Cache hits are distinguished from live tests. Missing keys, opt-in skips, ambiguous identities and unparsed responses are distinct from verified zero matches.
+
+Retrieval caps and result selection limits are explicit. Provider page/budget limits mean bounded coverage, not proof that science matches are exhausted. Full-text access outcomes and library-save status appear alongside source diagnostics. `--doctor` is a local configuration check; `--probe` attempts provider checks and uses one ILThermo dataset so health checks do not download an entire property archive. A summary covers the current operation only and makes no universal database-health or institutional-access claim.
+
 `--deep-read` now tries open-access resolution, DOI publisher redirects, main-paper PDF links from HTML metadata/anchors, and PDF links deposited with Crossref. Direct publisher landing pages and direct PDF URLs also work. Downloads use the local computer's network and a dedicated HTTP session, so campus IP access can work without a new API key. Only validated, readable PDF bytes count as successful full-text retrieval. Retrieval diagnostics record route, host and status; they do not prove institutional entitlement. HTML landing pages, login screens, abstracts and supporting PDFs do not count as the main paper. Redirects and session cookies stay in memory; full-text responses bypass the shared HTTP cache.
 
 When result is `browser_required` or `fulltext_unavailable`, follow `browser_handoff` using available browser tools in the user's existing browser session. Open publisher page, use institution's proxy/OpenAthens link generator when needed, and download the main paper through the site's normal controls. User completes NetID/MFA when prompted. Do not extract browser cookies or ask for passwords. Browser access is an agent workflow, not a Python login implementation. After download, call `--deep-read` with the actual local PDF path and verify extracted pages. If browser download tools are unavailable, report that specific limitation and request the downloaded PDF. Do not claim reading full text until extraction succeeds. No publisher subscription access has been proven merely by adding this resolver.
 
-Full-text collection: add `--fetch-fulltext 5 --pdf-dir <library-directory>` to `--literature` to fetch a bounded selection serially (maximum 20). Each readable paper gets a PDF, evidence JSON and checksum; `manifest.json` records successes, failures and browser handoffs. Rerunning reuses existing local PDFs. An existing different PDF is never overwritten. Inspect selected paper relevance before a large collection. For one paper use `--deep-read <DOI-or-URL> --save-pdf <paper.pdf>`. These local save options are CLI-only, not exposed by the HTTP bridge.
+Full-text collection: add `--fetch-fulltext 5 --pdf-dir <library-directory>` to `--literature` to fetch a bounded selection serially (maximum 20). Each readable paper gets a PDF, evidence JSON and checksum; `manifest.json` records successes, failures and browser handoffs. Rerunning reuses existing local PDFs. An existing different PDF is never overwritten. Inspect selected paper relevance before a large collection. For one paper use `--deep-read <DOI-or-URL> --save-pdf <paper.pdf>`. These local save options are available through the CLI.
 
 Unpaywall contact transmission is opt-in via `CHEM_MAT_HUB_UNPAYWALL_EMAIL`; no hardcoded personal address is sent by the overlay. Set that value only after user authorizes sending that contact to Unpaywall. Publisher/Crossref retrieval remains available without it. `network_error` means transport failure, not absence of a paper or lack of institutional subscription.
 

@@ -35,5 +35,10 @@ research-library/
 *.sqlite*
 *.db
 *.py.bak
-!codex/chem-mat-hub/scripts/openapi.json
 !codex/chem-mat-hub/assets/tessdata/source.json
+
+# Local development and verification artifacts
+.venv/
+venv/
+verification/
+work/

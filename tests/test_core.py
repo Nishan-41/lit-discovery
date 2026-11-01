@@ -51,8 +51,16 @@ def test_reconstruct_inverted_abstract_empty():
     assert reconstruct_inverted_abstract({}) is None
 
 
-def test_unpaywall_pdf_resolution():
-    # Verified open-access DOI
-    pdf_url = resolve_unpaywall_pdf("10.1038/nature12373")
-    assert pdf_url is not None
-    assert pdf_url.startswith("http")
+def test_unpaywall_pdf_resolution(monkeypatch):
+    from unittest.mock import Mock
+    response = Mock(status_code=200)
+    response.json.return_value = {"best_oa_location": {"url_for_pdf": "https://example.invalid/paper.pdf"}}
+    monkeypatch.setenv("CHEM_MAT_HUB_UNPAYWALL_EMAIL", "researcher@example.invalid")
+    monkeypatch.setattr("lit_discovery.core.unpaywall.requests.get", Mock(return_value=response))
+    assert resolve_unpaywall_pdf("10.1234/fixture") == "https://example.invalid/paper.pdf"
+
+
+def test_unpaywall_without_contact_does_not_request(monkeypatch):
+    monkeypatch.delenv("CHEM_MAT_HUB_UNPAYWALL_EMAIL", raising=False)
+    monkeypatch.delenv("UNPAYWALL_EMAIL", raising=False)
+    assert resolve_unpaywall_pdf("10.1234/fixture") is None

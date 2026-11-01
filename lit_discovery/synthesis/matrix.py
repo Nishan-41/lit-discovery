@@ -5,7 +5,7 @@ def generate_synthesis_matrix(articles):
     """Generates a structured side-by-side comparative table across discovered articles."""
     records = []
     md_lines = [
-        "| Paper / Author | Key Polymer Host | Ionic Liquid / Electrolyte | Conductivity (σ) | Thermal Stability (Td) | Mechanical Modulus | Empirical Consensus (scite.ai) | Full-Text PDF |",
+        "| Paper / Author | Key Polymer Host | Ionic Liquid / Electrolyte | Conductivity (σ) | Temperature mentions (unverified) | Mechanical mentions (unverified) | Citation counts (scite.ai) | Full-Text PDF |",
         "| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |"
     ]
     for art in articles:
@@ -24,7 +24,7 @@ def generate_synthesis_matrix(articles):
         if sc and sc.get("total_citations", 0) > 0:
             sc_str = f"🟢 {sc.get('supporting', 0)} Supp / 🔴 {sc.get('contradicting', 0)} Cont"
         else:
-            sc_str = "Neutral / 0"
+            sc_str = "Unavailable or zero"
         pdf_url = art.get("open_access_pdf")
         pdf_str = f"[Download PDF]({pdf_url})" if pdf_url else "—"
         records.append({
@@ -36,6 +36,7 @@ def generate_synthesis_matrix(articles):
             "thermal_stability": props.get("thermal_properties", []),
             "mechanical_properties": props.get("mechanical_modulus", []) + props.get("stretchability", []),
             "smart_citations": sc,
+            "evidence_status": "unverified_metadata_extraction",
             "doi": art.get("doi"),
             "open_access_pdf": pdf_url
         })

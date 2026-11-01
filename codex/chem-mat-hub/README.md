@@ -1,6 +1,6 @@
 # Chem-Mat-Hub Codex skill
 
-Portable copy of the local chemistry/materials research skill. See [SKILL.md](SKILL.md) for database coverage, evidence rules, CLI options and full-text access limits.
+Portable command-line chemistry/materials research skill. See [SKILL.md](SKILL.md) for database coverage, evidence rules, CLI options and full-text access limits.
 
 ## Install
 

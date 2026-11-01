@@ -6,7 +6,8 @@ import pytest
 from lit_discovery.exports.zotero import export_zotero_references
 
 
-def test_export_zotero_fallback_entries():
+def test_export_zotero_fallback_entries(monkeypatch):
+    monkeypatch.setattr("lit_discovery.exports.zotero.fetch_doi_citation_metadata", lambda *args: None)
     articles = [
         {
             "title": "Synthesis of Super-Tough Ionogels",
@@ -44,3 +45,24 @@ def test_export_zotero_fallback_entries():
             ris_content = f.read()
             assert "TY  - JOUR" in ris_content
             assert "ER  - " in ris_content
+
+
+def test_missing_metadata_is_not_invented(tmp_path):
+    bib, ris = tmp_path / "nested" / "refs.bib", tmp_path / "nested" / "refs.ris"
+    export_zotero_references([{"title": "Unknown year & {sample}", "doi": "https://arxiv.org/abs/1234.5678"}], bib_path=bib, ris_path=ris)
+    assert "year=" not in bib.read_text()
+    assert "journal=" not in bib.read_text()
+    assert "PY  -" not in ris.read_text()
+    assert "DO  -" not in ris.read_text()
+    assert "UR  - https://arxiv.org" in ris.read_text()
+    assert r"\&" in bib.read_text() and r"\{sample\}" in bib.read_text()
+
+
+def test_html_citation_response_uses_fallback(monkeypatch, tmp_path):
+    from unittest.mock import Mock
+    response = Mock(status_code=200, text="<html>Publisher login</html>")
+    monkeypatch.setattr("lit_discovery.exports.zotero.requests.get", Mock(return_value=response))
+    path = tmp_path / "refs.bib"
+    export_zotero_references([{"title": "Fixture", "doi": "10.1234/fixture"}], bib_path=path)
+    assert path.read_text().startswith("@article")
+    assert "<html>" not in path.read_text()

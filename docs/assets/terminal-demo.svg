@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="320" viewBox="0 0 1040 320" role="img" aria-labelledby="title desc">
+  <title id="title">LitDiscovery offline search and export demonstration</title>
+  <desc id="desc">Actual output from the synthetic offline demo: two adapters, two unique papers, merged source provenance, and two BibTeX and RIS entries. No network requests.</desc>
+  <rect width="1040" height="320" rx="16" fill="#0d1117"/>
+  <path d="M16 0h1008a16 16 0 0 1 16 16v36H0V16A16 16 0 0 1 16 0" fill="#161b22"/>
+  <circle cx="26" cy="26" r="5" fill="#f97583"/>
+  <circle cx="46" cy="26" r="5" fill="#e3b341"/>
+  <circle cx="66" cy="26" r="5" fill="#56d364"/>
+  <text x="520" y="31" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="13" fill="#8b949e">LitDiscovery / reproducible offline demo</text>
+  <g font-family="ui-monospace, SFMono-Regular, Consolas, monospace" font-size="18">
+    <text x="30" y="93" fill="#79c0ff">$ python examples/offline_demo.py</text>
+    <text x="30" y="137" fill="#f0f6fc" font-weight="600">LitDiscovery | offline demonstration</text>
+    <text x="30" y="169" fill="#8b949e">Data: synthetic fixtures; no network requests</text>
+    <text x="30" y="211" fill="#c9d1d9">Adapters: 2 | Unique papers: 2 | Returned: 2</text>
+    <text x="30" y="243" fill="#c9d1d9">Sources merged: crossref, openalex</text>
+    <text x="30" y="275" fill="#7ee787">Exports: 2 BibTeX entries, 2 RIS entries</text>
+  </g>
+</svg>

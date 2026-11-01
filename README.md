@@ -1,342 +1,161 @@
 <div align="center">
 
-# 🔬 LitDiscovery
+# LitDiscovery
 
-### The Open-Source Scientific Literature Discovery & Research Intelligence Platform
-**An open-source, local-first alternative to Elicit, SciSpace, Connected Papers, and Consensus.**
+**Scientific literature discovery, built for the terminal.**
 
-[![CI Test Suite](https://github.com/Nishan-41/lit-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/Nishan-41/lit-discovery/actions)
-[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688.svg)](https://fastapi.tiangolo.com)
-[![PyMuPDF](https://img.shields.io/badge/PyMuPDF-In--Memory-red.svg)](https://pymupdf.readthedocs.io/)
-[![Engines](https://img.shields.io/badge/Academic%20Engines-12%20Federated-success.svg)](#12-federated-academic-engines)
-[![scite.ai](https://img.shields.io/badge/scite.ai-Smart%20Citations-purple.svg)](https://scite.ai)
-[![Zotero](https://img.shields.io/badge/Zotero-BibTeX%20%26%20RIS-red.svg)](https://www.zotero.org)
-[![Materials DBs](https://img.shields.io/badge/Materials%20DBs-OQMD%20%7C%20C2DB%20%7C%20MOFdb%20%7C%20MP-blueviolet.svg)](#-zero-authentication-structural-materials-subsystem)
+Search across research databases. Explore citation networks. Turn papers into inspectable records and reusable references.
+
+[![CLI tests](https://github.com/Nishan-41/lit-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/Nishan-41/lit-discovery/actions/workflows/ci.yml)
+[![Research skill tests](https://github.com/Nishan-41/lit-discovery/actions/workflows/codex-skill.yml/badge.svg)](https://github.com/Nishan-41/lit-discovery/actions/workflows/codex-skill.yml)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
+[![License](https://img.shields.io/badge/License-MIT-64748B)](LICENSE)
+
+[Quick start](#quick-start) Â· [Offline demo](#try-it-without-api-keys) Â· [Architecture](docs/architecture.md) Â· [Contributing](CONTRIBUTING.md)
 
 </div>
 
----
+## Why this exists
 
-## 🌟 Executive Summary
+A literature search rarely ends with a list of titles. Research involves checking multiple databases, following references, reading PDFs, and carrying reliable metadata into the next experiment or manuscript.
 
-**LitDiscovery** is an enterprise-grade, extensible research intelligence engine designed for researchers, scientists, and engineers. It federates **12 academic literature databases concurrently**, resolves **direct legal open-access PDFs** via Unpaywall, validates scientific claims through **scite.ai Smart Citations** (Supporting vs. Contrasting tallies), snowballs citation networks like **Connected Papers**, and extracts experimental recipes and material parameters into a comparative synthesis matrix like **Elicit and SciSpace**—all while running **100% locally with complete data privacy and zero subscription fees**.
+LitDiscovery brings those steps into a scriptable Python CLI. It grew from chemistry and materials research workflows, with an emphasis on explicit sources, portable outputs, and a clear boundary between extracted text and scientific evidence.
 
-```
-                           ┌────────────────────────────────────────┐
-                           │       User Query / Research Topic      │
-                           └───────────────────┬────────────────────┘
-                                               │
-               ┌───────────────────────────────┴──────────────────────────────┐
-               ▼                               ▼                              ▼
-      [Zero-Auth Engines]              [Academic Preprints]           [Authoritative Repos]
-      • OpenAlex (250M works)          • arXiv (Physics/CS/Math)      • PubMed (NLM/NIH)
-      • Crossref (150M records)        • Europe PMC (Bio/Life Sci)    • DOE OSTI (Energy/Mats)
-      • DOAJ (Open Journals)           • Zenodo (CERN Datasets)       • Semantic Scholar (S2)*
-      • DataCite (Theses/Data)                                        • Elsevier Scopus*
-                                                                      • CORE (Universities)*
-               │                               │                              │
-               └───────────────────────────────┬──────────────────────────────┘
-                                               │ (Concurrent Execution)
-                                               ▼
-                              ┌───────────────────────────────────┐
-                              │  Deduplication & Relevance Rank   │
-                              │  (Normalizer & Keyword Coverage)  │
-                              └─────────────────┬─────────────────┘
-                                                │
-                     ┌──────────────────────────┴──────────────────────────┐
-                     ▼                                                     ▼
-        [Unpaywall Resolver]                                    [scite.ai Consensus Engine]
-     Direct OA PDF URL Resolution                            Smart Citations Empirical Sentiment
-     (Zero Captcha / Direct Stream)                          🟢 Supporting vs. 🔴 Contrasting
-                     │                                                     │
-                     └──────────────────────────┬──────────────────────────┘
-                                                │
-               ┌────────────────────────────────┴────────────────────────────────┐
-               ▼                                                                 ▼
-   [PyMuPDF In-Memory Reader]                                      [Synthesis & Export Layer]
-• Full-text extraction without disk writes                       • Elicit-style Comparative Matrix
-• Automated experimental parameter mining                        • 1-Click Zotero / Overleaf (.bib)
-  (Conductivity, Polymer matrix, Modulus, Td)                    • 1-Click Mendeley / EndNote (.ris)
-```
+## What you can do
 
----
+| Workflow | Capability |
+| --- | --- |
+| **Discover** | Concurrent search across 12 database adapters, deduplication, and transparent keyword ranking. |
+| **Explore** | Related works, papers citing a seed, and references cited by a seed, using OpenAlex. |
+| **Read** | PDF text and section extraction with candidate material-property mentions. |
+| **Export** | BibTeX and RIS with DOI content negotiation and local metadata fallbacks. |
+| **Connect** | Structural materials queries through Materials Project OPTIMADE, OQMD, C2DB, and MOFdb. |
+| **Preserve** | Optional [Chem-Mat-Hub CLI](codex/chem-mat-hub/README.md) for bounded pagination, PDF/OCR evidence, diagnostics, and a persistent SQLite research library. |
 
-## ⚖️ Feature Comparison: LitDiscovery vs. Commercial Platforms
+No web application, hosted API, or OpenAI API key is required. Database queries still contact external providers and may require credentials or subscriptions.
 
-| Capability | LitDiscovery (Ours) | Elicit.com | SciSpace | Connected Papers | Consensus.app |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Pricing** | **Free & Open Source (MIT)** | $300 - $600 / yr | $144 - $240 / yr | $108 - $180 / yr | $100 - $200 / yr |
-| **Federated Search Engines** | **12 Engines** | 1 (S2) | 1 (Crossref/S2) | 1 (S2) | 1 (S2) |
-| **DOE OSTI & CERN Zenodo** | ✅ **Built-in** | ❌ | ❌ | ❌ | ❌ |
-| **scite.ai Smart Citations** | ✅ **Native** | ❌ | ❌ | ❌ | Partial |
-| **Citation Graph Snowballing** | ✅ **3 Modes** | ❌ | ❌ | ✅ Co-citation only | ❌ |
-| **Comparative Synthesis Matrix** | ✅ **Markdown & JSON** | ✅ Web only | ✅ Web only | ❌ | ❌ |
-| **In-Memory PDF Stream Parsing** | ✅ **PyMuPDF (`fitz`)** | Cloud only | Cloud only | ❌ | ❌ |
-| **Official Publisher BibTeX/RIS** | ✅ **Direct DOI Sync** | Limited | Limited | ❌ | ❌ |
-| **Local Web UI & CLI** | ✅ **Both Included** | Web only | Web only | Web only | Web only |
-| **Privacy & Zero Data Logging** | ✅ **Runs Locally** | ❌ Cloud tracked | ❌ Cloud tracked | ❌ Cloud tracked | ❌ Cloud tracked |
+## Quick start
 
----
-
-## ⚡ Key Capabilities
-
-### 1. 12 Federated Academic Literature Engines
-Concurrently searches across 12 primary sources:
-1. **OpenAlex**: Global multi-disciplinary bibliographic graph (250M+ records)
-2. **Crossref**: Official publisher metadata registry (150M+ DOIs)
-3. **arXiv**: Cornell open-access repository for Physics, Materials, Math, and CS
-4. **Semantic Scholar**: Allen Institute AI academic graph *(Optional API Key)*
-5. **Europe PMC**: Comprehensive life sciences, biochemistry, and biomedicine literature
-6. **Elsevier Scopus**: Curated peer-reviewed indexing *(Optional API Key)*
-7. **CORE**: World's largest aggregator of open access research papers *(Optional API Key)*
-8. **PubMed (NLM/NIH)**: National Library of Medicine biomedical & chemistry citations
-9. **DOE OSTI**: U.S. Department of Energy national laboratories reports and papers
-10. **DOAJ**: Directory of Open Access Journals (peer-reviewed, gold open access)
-11. **DataCite**: International research data repositories, dissertations, and preprints
-12. **Zenodo (CERN)**: Open research, materials science datasets, and preprints
-
-### 2. Empirical Consensus Verification via scite.ai
-Automatically resolves citation sentiment classification:
-- 🟢 **Supporting Citations**: Independent papers that replicated or validated findings.
-- 🔴 **Contrasting / Contradicting Citations**: Papers questioning or refuting claims.
-- ⚪ **Mentioning Citations**: Contextual citations without strong empirical stance.
-- **Consensus Ratio**: Quantifies agreement level across the broader literature.
-
-### 3. Connected Papers & Citation Snowballing
-Trace the evolutionary network of scientific ideas:
-- **`related`**: Bibliographically coupled and co-cited works (Connected Papers graph).
-- **`forward` (`cites`)**: Recent publications that build on and cite the seed paper.
-- **`backward` (`cited_by`)**: Foundational seminal references cited by the seed paper.
-
-### 4. PyMuPDF In-Memory Full-Text Deep Reader
-- Downloads and processes open-access PDFs in RAM stream (zero disk footprint).
-- Extracts sections: Materials & Methods, Results & Discussion, Conclusions.
-- Regex extraction for experimental parameters:
-  - Ionic Conductivity ($\sigma$ in $\text{mS}\cdot\text{cm}^{-1}$)
-  - High-performance Polymer Matrix (PBO / Zylon, Kevlar, Kapton, PVDF, PTFE, PEEK, Nafion)
-  - Ionic Liquids / Salts ([EMIM][TFSI], [BMIM][BF4], LiTFSI, etc.)
-  - Thermal Decomposition Temperature ($T_d$ in °C)
-  - Mechanical Modulus ($E$ in $\text{GPa}$ or $\text{MPa}$) and Stretchability ($\%$)
-
-### 5. 1-Click Publisher Reference Exports
-- Uses DOI content negotiation (`Accept: application/x-bibtex` and `Accept: application/x-research-info-systems`) to retrieve exact publisher-formatted citations.
-- Direct drop-in for **Zotero**, **Mendeley**, **EndNote**, and **Overleaf / LaTeX**.
-
----
-
-## 🚀 Quick Start
-
-### Installation
+Requires **Python 3.10+**. Tested in CI on Python 3.10, 3.12, and 3.14.
 
 ```bash
-# Clone the repository
 git clone https://github.com/Nishan-41/lit-discovery.git
 cd lit-discovery
-
-# Install in editable mode
-pip install -e .
+python -m venv .venv
 ```
 
-*Prerequisites: Python 3.10+.*
-
-### Optional API Keys
-LitDiscovery works immediately with **9 zero-auth engines**! For higher rate limits on commercial databases, configure your `.env` file:
+Activate the environment:
 
 ```bash
-cp .env.example .env
+# macOS / Linux
+source .venv/bin/activate
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
 ```
 
-Edit `.env`:
-```env
-S2_API_KEY=your_semantic_scholar_api_key
-CORE_API_KEY=your_core_ac_uk_key
-SCOPUS_API_KEY=your_elsevier_scopus_key
-UNPAYWALL_EMAIL=your_university_email@domain.edu
-```
-
----
-
-## 💻 CLI Usage
-
-The `lit-discovery` CLI gives you terminal superpowers:
+Install and run a focused search:
 
 ```bash
-# 1. Search across 12 literature engines with Elicit-style synthesis
-lit-discovery search "polybenzoxazole ionogel ionic conductivity"
-
-# 2. Search and export citations directly to Zotero BibTeX and Mendeley RIS
-lit-discovery search "solid state battery aramid nanofiber" --bib references.bib --ris references.ris
-
-# 3. Explore Connected Papers citation graph for a seed paper
-lit-discovery graph "10.1038/s41563-022-01195-4" --mode related --limit 6
-
-# 4. Stream an open-access PDF into memory and extract methodology & recipes
-lit-discovery read "10.1038/nature12373" --pages 20
-
-# 5. Query zero-authentication structural materials repositories (OQMD, C2DB, MOFdb, MP)
-lit-discovery materials --formula "MoS2"
-lit-discovery materials --mof "UiO-66"
-
-# 6. Launch the interactive browser Web UI
-lit-discovery ui --port 8000
+python -m pip install -e .
+lit-discovery --help
+lit-discovery search "polymer electrolyte conductivity" --engines crossref,openalex --top 5 --no-enrich
 ```
 
----
+The default search uses all configured adapters. Narrowing engines makes a first run easier to inspect. Provider availability, rate limits, and coverage vary.
 
-## 🖥️ Interactive Web UI
+## Try it without API keys
 
-Launch the embedded responsive Web UI with a single command:
+Run the complete search-to-export path against **synthetic fixtures**, without network calls:
 
 ```bash
-lit-discovery ui
+python examples/offline_demo.py
 ```
 
-Navigate to `http://localhost:8000`:
+![Terminal output from the synthetic offline demonstration](docs/assets/terminal-demo.svg)
 
-- 🔍 **Federated Search**: Search across 12 academic engines concurrently.
-- 📊 **Comparative Synthesis Matrix**: Side-by-side table comparing host polymers, electrolytes, conductivity, and thermal stability.
-- 🟢 **scite.ai Badges**: Live indicators of supporting vs. contrasting citations.
-- 📥 **1-Click Export**: Download `.bib` and `.ris` files instantly for your reference manager.
-- 🕸️ **Citation Graph Explorer**: Interactive snowballing for seed papers.
-- 📖 **Deep Reader**: Stream full-text PDFs and inspect recipe parameters in real time.
+The demo exercises the real dispatcher, ranking, deduplication, synthesis, and citation exporter. Synthetic titles and authors are clearly identified; outputs use a temporary directory. See [examples](examples/README.md) for live workflows.
 
----
+## CLI reference
 
-## 🐍 Python API Usage
+| Command | Example |
+| --- | --- |
+| Search | `lit-discovery search "solid polymer electrolyte" --engines crossref --top 5` |
+| Export citations | `lit-discovery search "aramid electrolyte" --bib references.bib --ris references.ris` |
+| JSON for scripts | `lit-discovery search "ionogel" --no-enrich --json > results.json` |
+| Citing papers | `lit-discovery graph "10.1038/nature12373" --mode forward --limit 5` |
+| Cited references | `lit-discovery graph "10.1038/nature12373" --mode backward --limit 5` |
+| Read a PDF | `lit-discovery read "10.1038/nature12373" --pages 20 --json` |
+| Material structures | `lit-discovery materials --formula "MoS2" --json` |
+| Porous frameworks | `lit-discovery materials --mof "UiO-66"` |
 
-Use LitDiscovery as a Python library in your own research workflows:
+Use `<command> --help` for all options. JSON goes to stdout; progress goes to stderr. JSON and citation export flags can be combined.
 
-### Basic Search & Synthesis Matrix
-```python
-from lit_discovery import search_literature
+### Provider configuration
 
-results = search_literature(
-    query_text="rigid-rod polybenzoxazole electrolyte",
-    limit_per_engine=3,
-    top_n=5
-)
+Copy [`.env.example`](.env.example) to `.env` and fill only the variables you need. Empty values leave optional credentials unset. Process environment variables take precedence.
 
-print(f"Total Papers Discovered: {results['total_articles_retrieved']}")
-print(results["synthesis_table_markdown"])
-```
+| Variable | Used for |
+| --- | --- |
+| `S2_API_KEY` | Optional Semantic Scholar authentication. |
+| `CORE_API_KEY` | CORE access. |
+| `SCOPUS_API_KEY` | Scopus access, subject to provider permissions. |
+| `CHEM_MAT_HUB_UNPAYWALL_EMAIL` | Opt-in contact sent to Unpaywall when resolving open-access locations. |
 
-### Empirical Consensus Verification (scite.ai)
-```python
-from lit_discovery import resolve_scite_tallies
+Adapters: OpenAlex, Crossref, Semantic Scholar, Europe PMC, arXiv, Scopus, OSTI, DOAJ, DataCite, PubMed, CORE, and Zenodo. An adapter being present does not establish current provider availability. There is no bundled subscription or institutional-access guarantee.
 
-sentiment = resolve_scite_tallies("10.1038/nature12373")
-print(f"Supporting Citations: {sentiment['supporting']}")
-print(f"Contrasting Citations: {sentiment['contrasting']}")
-print(f"Total Citations: {sentiment['total_citations']}")
-```
+### Extended chemistry and materials workflow
 
-### Citation Network Snowballing (Connected Papers)
-```python
-from lit_discovery import explore_citation_graph
-
-graph = explore_citation_graph(
-    seed_doi_or_query="10.1038/s41563-022-01195-4",
-    mode="related",
-    limit=5
-)
-
-for paper in graph["connected_works"]:
-    print(f"• {paper['title']} ({paper['year']}) -> {paper['doi']}")
-```
-
-### Reference Management Export
-```python
-from lit_discovery import export_zotero_references
-
-export_zotero_references(
-    articles=results["articles"],
-    bib_path="library.bib",
-    ris_path="library.ris"
-)
-```
-
-### Zero-Authentication Materials Discovery
-```python
-from lit_discovery import query_all_materials
-
-mat_results = query_all_materials(formula="MoS2", limit=3)
-dbs = mat_results["databases"]
-
-# 1. Materials Project (OPTIMADE v1)
-for m in dbs["materials_project_optimade"].get("materials", []):
-    print(f"MP ID: {m['material_id']}, Formula: {m['formula_pretty']}")
-
-# 2. DTU C2DB (2D Monolayer Materials)
-for m in dbs["c2db_2d_materials"].get("materials", []):
-    print(f"C2DB ID: {m['c2db_id']}, Lattice: {m['lattice_vectors']}")
-
-# 3. Northwestern OQMD
-for m in dbs["oqmd"].get("materials", []):
-    print(f"OQMD Entry: {m['entry_id']}, ΔHf: {m['formation_energy_eV_atom']} eV/atom")
-
-# 4. Northwestern CoRE MOF / MOFdb
-mof_data = query_all_materials(mof_name="UiO-66", limit=3)
-for m in mof_data["databases"]["core_mofdb"].get("mofs", []):
-    print(f"MOF: {m['name']}, Surface Area: {m['surface_area_m2g']} m²/g, Void Frac: {m['void_fraction']}")
-```
-
----
-
-## 🧱 Zero-Authentication Structural Materials Subsystem
-
-LitDiscovery directly connects literature topics with open materials structures without requiring mandatory API keys:
-
-| Database | Institution | Records / Scope | Key Physical Descriptors |
-| :--- | :--- | :--- | :--- |
-| **OQMD** | Northwestern University | 1M+ Inorganic Crystals | Formation Energy ($\Delta H_f$), Stability (Convex Hull), Prototype, Spacegroup, Unit Cell |
-| **C2DB** | DTU (Denmark) | 2D Monolayer Materials | 2D Topology, Dimension types `[1,1,0]`, Lattice vectors, Stoichiometry |
-| **CoRE MOF / MOFdb** | Northwestern University | Porous Frameworks (MOFs) | Gravimetric & Volumetric Surface Area ($m^2/g$), Pore Limiting Diameter (PLD), Void Fraction |
-| **Materials Project** | LBNL / UC Berkeley | 150k+ Inorganic Crystals | Zero-auth fallback via standardized OPTIMADE v1 protocol for lattice vectors & reduced formulas |
-
----
-
-## 📦 Standalone Zero-Dependency Edition
-
-For cluster environments or quick scripts without package installation, use the standalone edition:
+The optional [Chem-Mat-Hub CLI](codex/chem-mat-hub/README.md) is distributed separately from the Python package:
 
 ```bash
-python standalone/lit_discovery_single.py "high performance ionogel"
+python -m pip install -r codex/chem-mat-hub/requirements.txt
+python codex/chem-mat-hub/scripts/codex_hub.py --doctor
+python codex/chem-mat-hub/scripts/codex_hub.py --literature "ionogel conductivity" --fetch-fulltext 0 --library-dir ./research-library
 ```
 
----
+It adds identity-checked ILThermo tables, bounded pagination, retry/cache controls, per-source diagnostics, local PDF/OCR evidence, and a persistent library with an offline graph export. These features belong to the extended CLI; the base package does not automatically inherit them.
 
-## 🧪 Testing
+## How it is built
 
-Run the comprehensive unit and integration test suite:
+```mermaid
+flowchart LR
+    CLI[CLI / Python library] --> Search[Concurrent provider adapters]
+    Search --> Normalize[Deduplicate + rank]
+    Normalize --> Enrich[Optional citation / OA enrichment]
+    Enrich --> Output[JSON + synthesis + BibTeX / RIS]
+    CLI --> Graph[OpenAlex citation exploration]
+    CLI --> PDF[PDF text extraction]
+    CLI --> Materials[Materials database adapters]
+```
+
+The [architecture notes](docs/architecture.md) describe module boundaries, concurrency, failure behavior, testing, and tradeoffs. The [roadmap](docs/roadmap.md) separates current behavior from planned improvements.
+
+## Development
 
 ```bash
-pytest tests/ -v
+python -m pip install -e ".[dev]"
+python -m pytest tests -q
 ```
 
----
+Optional research workflow tests:
 
-## 📜 Citation
-
-If you use LitDiscovery in your research, please cite:
-
-```bibtex
-@software{lit_discovery_2026,
-  author = {Rehan and Research Contributors},
-  title = {LitDiscovery: Open-Source Scientific Literature Discovery and Research Intelligence Platform},
-  year = {2026},
-  url = {https://github.com/Nishan-41/lit-discovery},
-  version = {1.0.0}
-}
+```bash
+python -m pip install -r codex/chem-mat-hub/requirements.txt
+python -m pytest --rootdir codex/chem-mat-hub --confcutdir codex/chem-mat-hub/tests codex/chem-mat-hub/tests -q
 ```
 
----
+Unit tests use controlled responses, temporary files, and generated PDFs. They do not require live database access. CI also builds and checks the package distribution.
 
-## 📄 License
+## Research boundaries
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+- Keyword scores are retrieval heuristics, not calibrated probabilities or scientific confidence.
+- Citation classifications are provider metadata, not proof of replication or scientific consensus.
+- Base PDF/property extraction finds candidate mentions. It does not reliably resolve specimen, test conditions, units, or causality; validate against the original paper.
+- The base reader handles text PDFs and uses an explicit page limit. OCR, page evidence, and persistent storage are extended-CLI features.
+- Search results are bounded by selected providers and retrieval limits. The base CLI can conflate a provider's empty response with unavailable results; use extended diagnostics when coverage matters.
+- Keep credentials, subscription PDFs, research records, and unpublished analysis out of Git. See [security guidance](SECURITY.md).
 
-## Codex chemistry/materials skill
+## License and citation
 
-The [portable Chem-Mat-Hub skill](codex/chem-mat-hub/README.md) adds chemistry/materials database queries, validated full-text retrieval, PDF/OCR evidence, persistent local paper records and an offline progress graph. Database credentials and research-library files remain local. See [project instructions](AGENTS.md) for research persistence rules.
+Project source is available under the [MIT License](LICENSE). Bundled OCR model attribution is documented [with the model](codex/chem-mat-hub/assets/tessdata/LICENSE); third-party dependencies retain their own licenses. If this tool supports your work, use [CITATION.cff](CITATION.cff).

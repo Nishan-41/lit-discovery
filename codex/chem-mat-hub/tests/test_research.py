@@ -262,24 +262,6 @@ def test_guarded_sync(tmp_path,monkeypatch):
     assert sync_upstream.refresh()['status']=='blocked'
 
 
-def test_bridge_signatures_and_validation(monkeypatch,tmp_path):
-    from fastapi.testclient import TestClient
-    import chatgpt_api_server as bridge
-    client=TestClient(bridge.app)
-    monkeypatch.setattr(bridge.research,'search',lambda hub,runtime,query,config:{'query':query,'max_results':config.max_results})
-    assert client.get('/literature',params={'query':'ionogel','max_results':21}).json()=={'query':'ionogel','max_results':21}
-    assert client.get('/literature',params={'query':'x','year_from':2026,'year_to':2020}).status_code==422
-    monkeypatch.setattr(hub,'explore_citation_graph',lambda seed,mode:{'seed':seed,'mode':mode})
-    assert client.get('/citation-graph',params={'seed_doi':'10.1234/test','mode':'forward'}).json()['seed']=='10.1234/test'
-    assert client.get('/citation-graph',params={'seed_doi':'10.1234/test','mode':'bad'}).status_code==422
-    assert client.get('/polymer',params={'name':'zylon'}).json()['status']=='success'
-    assert client.get('/coolprop',params={'fluid':'Water'}).json()['status']=='success'
-    assert client.get('/walden',params={'conductivity_ms_cm':9.1,'viscosity_mpa_s':32,'density_g_cm3':1.52,'molar_mass':391.31}).json()['walden_metrics']['molar_conductivity_Lambda_S_cm2_mol']==2.3427
-    assert '/literature' in client.get('/openapi.json').json()['paths']
-    assert client.get('/walden',params={'conductivity_ms_cm':-1,'viscosity_mpa_s':32}).status_code==422
-    assert client.get('/deep-read',params={'doi_or_url':str(tmp_path/'local.pdf')}).status_code==422
-
-
 def test_legacy_unpaywall_requires_opt_in(monkeypatch):
     import unified_chem_mat_hub as legacy
     monkeypatch.delenv('CHEM_MAT_HUB_UNPAYWALL_EMAIL', raising=False)

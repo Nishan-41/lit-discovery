@@ -9,7 +9,7 @@ from lit_discovery.core.relevance import reconstruct_inverted_abstract
 from lit_discovery.core.unpaywall import resolve_unpaywall_pdf
 from lit_discovery.intelligence.scite_consensus import resolve_scite_tallies
 
-HEADERS = {"User-Agent": "LitDiscovery/1.0 (mailto:rehan@arizona.edu)"}
+HEADERS = {"User-Agent": "LitDiscovery/1.0"}
 
 
 def resolve_seed_work(seed_input: str):
@@ -47,7 +47,7 @@ def resolve_seed_work(seed_input: str):
 
             # 1b. Query arXiv export API to obtain exact title or published journal DOI
             try:
-                r_ax = requests.get(f"http://export.arxiv.org/api/query?id_list={aid}", headers=HEADERS, timeout=8)
+                r_ax = requests.get(f"https://export.arxiv.org/api/query?id_list={aid}", headers=HEADERS, timeout=8)
                 if r_ax.status_code == 200:
                     root = ET.fromstring(r_ax.text)
                     ns = {"atom": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/atom"}

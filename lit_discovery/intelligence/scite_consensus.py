@@ -1,7 +1,7 @@
 """scite.ai Smart Citations sentiment & consensus tallies."""
 import requests
 
-HEADERS = {"User-Agent": "LitDiscovery/1.0 (mailto:rehan@arizona.edu)"}
+HEADERS = {"User-Agent": "LitDiscovery/1.0"}
 
 def resolve_scite_tallies(doi):
     """Queries scite.ai API for empirical tallies: supporting, contrasting, and mentioning citations."""

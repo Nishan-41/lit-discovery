@@ -21,7 +21,7 @@ def main():
         print()
 
     print("=" * 80)
-    print("COMPARATIVE SYNTHESIS MATRIX (Elicit / SciSpace Style)")
+    print("METADATA SYNTHESIS (UNVERIFIED CANDIDATES)")
     print("=" * 80)
     print(results["synthesis_table_markdown"])
 

@@ -8,7 +8,7 @@ try:
 except ImportError:
     fitz = None
 
-HEADERS = {"User-Agent": "LitDiscovery/1.0 (mailto:rehan@arizona.edu)"}
+HEADERS = {"User-Agent": "LitDiscovery/1.0"}
 
 def extract_material_properties(text):
     """Extracts key experimental metrics and parameters from scientific text."""
