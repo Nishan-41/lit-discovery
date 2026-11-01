@@ -9,7 +9,7 @@ description = "Command-line scientific literature discovery and research intelli
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
-    { name = "Rehan & Lab Contributors", email = "rehan@arizona.edu" }
+    { name = "Rehan Hasnain" }
 ]
 keywords = [
     "literature-discovery",
@@ -26,7 +26,7 @@ keywords = [
     "research-intelligence"
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
     "License :: OSI Approved :: MIT License",
@@ -34,6 +34,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent"
 ]
 requires-python = ">=3.10"

@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """
-LitDiscovery (Single-File Standalone Edition)
-============================================
-All-in-one scientific literature discovery, smart citation consensus (scite.ai),
-Connected Papers citation graph snowballing, and comparative synthesis matrix.
+LitDiscovery single-file CLI: six-source literature search and optional enrichment.
+
+Requires requests; does not provide the full package or extended research CLI.
 
 Usage:
-  python lit_discovery_single.py "polybenzoxazole ionogel conductivity"
-  python lit_discovery_single.py --graph "10.1039/c9ta01153a"
-  python lit_discovery_single.py --bib refs.bib --ris refs.ris "solid polymer electrolyte"
+  python lit_discovery_single.py "polymer electrolyte conductivity" --top 5
 """
 
 import argparse
@@ -36,7 +33,7 @@ except ImportError:
 S2_KEY = os.environ.get("S2_API_KEY") or os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
 CORE_KEY = os.environ.get("CORE_API_KEY")
 SCOPUS_KEY = os.environ.get("SCOPUS_API_KEY") or os.environ.get("ELSEVIER_API_KEY")
-HEADERS = {"User-Agent": "LitDiscovery-Standalone/1.0 (mailto:rehan@arizona.edu)"}
+HEADERS = {"User-Agent": "LitDiscovery-Standalone/1.0"}
 
 
 def clean_xml_abstract(raw_text):
@@ -77,15 +74,16 @@ def calculate_relevance_rating(query_text, title, abstract):
     return {"score_percent": score, "confidence_tier": tier}
 
 
-def resolve_unpaywall_pdf(doi, email="rehan@arizona.edu"):
-    if not doi:
+def resolve_unpaywall_pdf(doi, email=None):
+    email = email or os.getenv("CHEM_MAT_HUB_UNPAYWALL_EMAIL") or os.getenv("UNPAYWALL_EMAIL")
+    if not doi or not email:
         return None
     clean = doi.replace("https://doi.org/", "").replace("http://doi.org/", "").strip()
     if not clean or "10." not in clean:
         return None
     try:
-        url = f"https://api.unpaywall.org/v2/{clean}?email={email}"
-        r = requests.get(url, headers=HEADERS, timeout=6)
+        url = f"https://api.unpaywall.org/v2/{clean}"
+        r = requests.get(url, params={"email": email}, headers=HEADERS, timeout=6)
         if r.status_code == 200:
             data = r.json()
             best = data.get("best_oa_location")
@@ -385,7 +383,7 @@ def main():
     args = parser.parse_args()
 
     results = run_standalone_search(args.query, top_n=args.top)
-    print(f"\n[+] Discovered {len(results)} high-impact papers:\n")
+    print(f"\n[+] Discovered {len(results)} papers:\n")
 
     for i, a in enumerate(results, 1):
         sc = a.get("smart_citations") or {}

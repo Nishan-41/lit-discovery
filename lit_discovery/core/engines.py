@@ -18,7 +18,7 @@ load_dotenv(os.path.expanduser("~/.env"))
 S2_KEY = os.environ.get("S2_API_KEY") or os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
 CORE_KEY = os.environ.get("CORE_API_KEY")
 SCOPUS_KEY = os.environ.get("SCOPUS_API_KEY") or os.environ.get("ELSEVIER_API_KEY")
-HEADERS = {"User-Agent": "LitDiscovery/1.0 (mailto:rehan@arizona.edu)"}
+HEADERS = {"User-Agent": "LitDiscovery/1.0"}
 
 def fetch_openalex_literature(query_text, limit=5):
     """Queries OpenAlex global scientific graph and reconstructs inverted-index abstracts."""
@@ -124,7 +124,7 @@ def fetch_europe_pmc_literature(query_text, limit=5):
 def fetch_arxiv_literature(query_text, limit=5):
     """Queries arXiv API for preprints with direct PDF download links."""
     try:
-        url = f"http://export.arxiv.org/api/query?search_query=all:{urllib.parse.quote(query_text)}&start=0&max_results={limit}"
+        url = f"https://export.arxiv.org/api/query?search_query=all:{urllib.parse.quote(query_text)}&start=0&max_results={limit}"
         r = requests.get(url, headers=HEADERS, timeout=12)
         articles = []
         if r.status_code == 200:

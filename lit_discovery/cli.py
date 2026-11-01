@@ -20,22 +20,13 @@ if hasattr(sys.stdout, "reconfigure"):
 
 
 def print_banner():
-    banner = r"""
-  _      _ _     _____  _                                  
- | |    (_) |   |  __ \(_)                                 
- | |     _| |_  | |  | |_ ___  ___ _____   _____ _ __ _   _ 
- | |    | | __| | |  | | / __|/ __/ _ \ \ / / _ \ '__| | | |
- | |____| | |_  | |__| | \__ \ (_| (_) \ V /  __/ |  | |_| |
- |______|_|\__| |_____/|_|___/\___\___/ \_/ \___|_|   \__, |
-                                                       __/ |
-       Scientific Literature Discovery & Consensus    |___/ 
-    """
-    print(banner)
+    print(f"LitDiscovery {__version__}")
+    print("Scientific literature discovery from the terminal.\n")
 
 
 def cmd_search(args):
     engines = [e.strip() for e in args.engines.split(",")] if args.engines else None
-    print(f"[*] Querying literature engines for: '{args.query}'...")
+    print(f"[*] Querying literature engines for: '{args.query}'...", file=sys.stderr)
     data = search_literature(
         query_text=args.query,
         selected_engines=engines,
@@ -43,6 +34,12 @@ def cmd_search(args):
         top_n=args.top,
         enrich=not args.no_enrich
     )
+
+    if args.bib or args.ris:
+        data["zotero_export"] = export_zotero_references(
+            data.get("articles", []), bib_path=args.bib, ris_path=args.ris
+        )
+        print("[*] Citation exports complete.", file=sys.stderr)
 
     if args.json:
         print(json.dumps(data, indent=2))
@@ -53,7 +50,7 @@ def cmd_search(args):
 
     for idx, art in enumerate(data.get("articles", []), 1):
         sc = art.get("smart_citations") or {}
-        sc_str = f"🟢 {sc.get('supporting', 0)} Supp | 🔴 {sc.get('contrasting', 0)} Cont" if sc.get("total_citations", 0) > 0 else "Neutral / 0"
+        sc_str = f"🟢 {sc.get('supporting', 0)} Supp | 🔴 {sc.get('contrasting', 0)} Cont" if sc.get("total_citations", 0) > 0 else "Unavailable or zero; inspect record"
         oa_str = f"OA PDF: {art.get('open_access_pdf')}" if art.get("open_access_pdf") else "OA PDF: None"
         score = art.get("relevance", {}).get("score_percent", 0)
 
@@ -61,7 +58,7 @@ def cmd_search(args):
         print(f"   Authors: {', '.join(art.get('authors', [])[:3])} ({art.get('year')}) | {art.get('journal', 'Journal')}")
         print(f"   DOI: {art.get('doi')} | Match: {score}%")
         print(f"   scite.ai: {sc_str} | {oa_str}")
-        print(f"   Abstract: {art.get('abstract', '')[:160]}...\n")
+        print(f"   Abstract: {(art.get('abstract') or 'Abstract unavailable')[:160]}...\n")
 
     if data.get("synthesis_table_markdown"):
         print("=" * 80)
@@ -69,17 +66,9 @@ def cmd_search(args):
         print("=" * 80)
         print(data["synthesis_table_markdown"])
 
-    if args.bib or args.ris:
-        print(f"\n[*] Exporting citations to Zotero/Mendeley formats...")
-        export_zotero_references(data.get("articles", []), bib_path=args.bib, ris_path=args.ris)
-        if args.bib:
-            print(f"[+] BibTeX saved to: {args.bib}")
-        if args.ris:
-            print(f"[+] RIS saved to: {args.ris}")
-
 
 def cmd_graph(args):
-    print(f"[*] Exploring citation graph for seed: '{args.seed}' (Mode: {args.mode})...")
+    print(f"[*] Exploring citation graph for seed: '{args.seed}' (Mode: {args.mode})...", file=sys.stderr)
     data = explore_citation_graph(seed_doi_or_query=args.seed, mode=args.mode, limit=args.limit)
 
     if args.json:
@@ -97,7 +86,7 @@ def cmd_graph(args):
 
     for idx, w in enumerate(data.get("connected_works", []), 1):
         sc = w.get("smart_citations") or {}
-        sc_str = f"🟢 {sc.get('supporting', 0)} Supp | 🔴 {sc.get('contrasting', 0)} Cont" if sc.get("total_citations", 0) > 0 else "Neutral / 0"
+        sc_str = f"🟢 {sc.get('supporting', 0)} Supp | 🔴 {sc.get('contrasting', 0)} Cont" if sc.get("total_citations", 0) > 0 else "Unavailable or zero; inspect record"
         print(f"{idx}. {w.get('title')} ({w.get('year')})")
         print(f"   DOI: {w.get('doi')} | scite.ai: {sc_str}")
         if w.get("open_access_pdf"):
@@ -106,7 +95,7 @@ def cmd_graph(args):
 
 
 def cmd_read(args):
-    print(f"[*] Streaming PDF into memory: '{args.target}'...")
+    print(f"[*] Reading PDF: '{args.target}'...", file=sys.stderr)
     data = deep_read_pdf(target_doi_or_url=args.target, max_pages=args.pages)
 
     if args.json:
@@ -141,7 +130,7 @@ def cmd_materials(args):
         print("Error: Must provide at least one of --formula, --elements, or --mof.")
         sys.exit(1)
 
-    print(f"[*] Querying zero-authentication materials repositories...")
+    print("[*] Querying materials repositories...", file=sys.stderr)
     data = query_all_materials(
         formula=args.formula,
         elements=args.elements,
@@ -189,10 +178,17 @@ def cmd_materials(args):
     print("\n" + "=" * 60)
 
 
+def positive_int(value):
+    number = int(value)
+    if number <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return number
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="lit-discovery",
-        description="LitDiscovery: Open-Source Scientific Literature Discovery, Smart Citation Consensus, and Research Intelligence."
+        description="Search literature, explore citations, read PDFs, and export references."
     )
     parser.add_argument("-v", "--version", action="version", version=f"lit-discovery {__version__}")
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
@@ -201,24 +197,24 @@ def main():
     p_search = subparsers.add_parser("search", help="Search scientific literature across 12 academic engines")
     p_search.add_argument("query", help="Scientific query string")
     p_search.add_argument("--engines", help="Comma-separated engine names (e.g. 'openalex,arxiv,crossref')")
-    p_search.add_argument("--limit", type=int, default=5, help="Results per engine (default: 5)")
-    p_search.add_argument("--top", type=int, default=10, help="Top enriched articles (default: 10)")
+    p_search.add_argument("--limit", type=positive_int, default=5, help="Results per engine (default: 5)")
+    p_search.add_argument("--top", type=positive_int, default=10, help="Top enriched articles (default: 10)")
     p_search.add_argument("--no-enrich", action="store_true", help="Skip Unpaywall and scite.ai enrichment")
     p_search.add_argument("--bib", help="Path to save BibTeX (.bib) file")
     p_search.add_argument("--ris", help="Path to save RIS (.ris) file")
     p_search.add_argument("--json", action="store_true", help="Output full response as JSON")
 
     # Graph
-    p_graph = subparsers.add_parser("graph", help="Explore citation networks (Connected Papers style)")
+    p_graph = subparsers.add_parser("graph", help="Explore related works, citing papers, or references")
     p_graph.add_argument("seed", help="Seed DOI or title")
     p_graph.add_argument("--mode", choices=["related", "forward", "backward"], default="related", help="Graph mode")
-    p_graph.add_argument("--limit", type=int, default=6, help="Max connected works")
+    p_graph.add_argument("--limit", type=positive_int, default=6, help="Max connected works")
     p_graph.add_argument("--json", action="store_true", help="Output as JSON")
 
     # Read
-    p_read = subparsers.add_parser("read", help="PyMuPDF in-memory deep reader for experimental extraction")
+    p_read = subparsers.add_parser("read", help="Read a PDF and extract candidate material properties")
     p_read.add_argument("target", help="Target DOI or direct open-access PDF URL")
-    p_read.add_argument("--pages", type=int, default=30, help="Max pages to inspect (default: 30)")
+    p_read.add_argument("--pages", type=positive_int, default=30, help="Max pages to inspect (default: 30)")
     p_read.add_argument("--json", action="store_true", help="Output as JSON")
 
     # Materials
@@ -226,7 +222,7 @@ def main():
     p_mat.add_argument("--formula", help="Chemical formula (e.g. 'TiO2', 'MoS2', 'Fe2O3')")
     p_mat.add_argument("--elements", help="Comma-separated constituent elements (e.g. 'Ti,O')")
     p_mat.add_argument("--mof", help="MOF name or porous framework (e.g. 'UiO-66', 'MOF-5')")
-    p_mat.add_argument("--limit", type=int, default=5, help="Max items per database (default: 5)")
+    p_mat.add_argument("--limit", type=positive_int, default=5, help="Max items per database (default: 5)")
     p_mat.add_argument("--json", action="store_true", help="Output as raw JSON")
 
     args = parser.parse_args()
@@ -236,14 +232,11 @@ def main():
         parser.print_help()
         sys.exit(0)
 
-    if args.command == "search":
-        cmd_search(args)
-    elif args.command == "graph":
-        cmd_graph(args)
-    elif args.command == "read":
-        cmd_read(args)
-    elif args.command == "materials":
-        cmd_materials(args)
+    handlers = {"search": cmd_search, "graph": cmd_graph, "read": cmd_read, "materials": cmd_materials}
+    try:
+        handlers[args.command](args)
+    except ValueError as exc:
+        parser.error(str(exc))
 
 
 if __name__ == "__main__":

@@ -1,21 +1,15 @@
 cff-version: 1.2.0
-message: "If you use Lit-Discovery in your research, please cite it as below."
-title: "Lit-Discovery: An Open-Source Scientific Literature Discovery, Empirical Consensus & Research Intelligence Platform"
+message: "If you use LitDiscovery in your research, please cite this software."
+title: "LitDiscovery: Command-line scientific literature discovery and research intelligence"
 authors:
-  - family-names: "Rehan"
-    given-names: "Lab"
-    affiliation: "University of Arizona"
+  - family-names: "Hasnain"
+    given-names: "Rehan"
 version: 1.0.0
-date-released: 2026-09-18
 url: "https://github.com/Nishan-41/lit-discovery"
 license: MIT
 keywords:
   - "literature discovery"
-  - "academic search"
-  - "smart citations"
-  - "consensus verification"
-  - "connected papers"
-  - "citation network"
-  - "elicit"
-  - "scispace"
-  - "open research"
+  - "scientific computing"
+  - "citation networks"
+  - "materials science"
+  - "command-line tools"
