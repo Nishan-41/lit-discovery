@@ -11,7 +11,7 @@ Search across research databases. Explore citation networks. Turn papers into in
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![License](https://img.shields.io/badge/License-MIT-64748B)](LICENSE)
 
-[Quick start](#quick-start) Â· [Offline demo](#try-it-without-api-keys) Â· [Architecture](docs/architecture.md) Â· [Contributing](CONTRIBUTING.md)
+[Quick start](#quick-start) | [Offline demo](#try-it-without-api-keys) | [Architecture](docs/architecture.md) | [Contributing](CONTRIBUTING.md)
 
 </div>
 
