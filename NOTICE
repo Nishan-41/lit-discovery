@@ -1,8 +1,15 @@
-LitDiscovery
+LitDiscovery, including the Chem-Mat-Hub skill
 Copyright (c) 2026 Rehan & Lab Contributors, University of Arizona
 
-This project is licensed under the Apache License, Version 2.0.
+Project source is licensed under the Apache License, Version 2.0.
+The license text is provided once, in the repository-root LICENSE file.
 
-The bundled English OCR model retains its own Apache-2.0 license and
-provenance records under codex/chem-mat-hub/assets/tessdata/.
+Bundled third-party asset: English OCR model (eng.traineddata)
+Upstream project: tesseract-ocr/tessdata_fast
+License: Apache-2.0 (the same license text in LICENSE)
+Source: https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/87416418657359cb625c412a48b6e1d6d41c29bd/eng.traineddata
+Upstream commit: 87416418657359cb625c412a48b6e1d6d41c29bd
+SHA-256: 7d4322bd2a7749724879683fc3912cb542f19906c83bcc1a52132556427170b2
+Full model provenance: codex/chem-mat-hub/assets/tessdata/source.json
+
 Third-party dependencies retain their respective licenses and notices.

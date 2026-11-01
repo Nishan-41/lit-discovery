@@ -4,7 +4,7 @@ Portable command-line chemistry/materials research skill. See [SKILL.md](SKILL.m
 
 ## Install
 
-Copy this directory to your Codex skills directory as `chem-mat-hub`, then install dependencies:
+Copy this directory to your Codex skills directory as `chem-mat-hub`. Include copies of the repository-root `LICENSE` and `NOTICE` files in the installed directory, then install dependencies:
 
 ```sh
 python -m pip install -r requirements.txt
@@ -31,4 +31,4 @@ Keep library data, subscription PDFs, evidence, notes and credentials outside Gi
 python -m pytest --rootdir . --confcutdir tests tests -q
 ```
 
-Tests use local fixtures and mocked network calls. Bundled English OCR model is distributed under Apache 2.0; see `assets/tessdata/LICENSE` and pinned source/checksum in `assets/tessdata/source.json`. Skill source is licensed under Apache-2.0; see `LICENSE` and `NOTICE`.
+Tests use local fixtures and mocked network calls. Project source and the bundled English OCR model use Apache-2.0. The single [repository LICENSE](../../LICENSE) contains the license text; [NOTICE](../../NOTICE) retains attribution. Model source and checksum remain in `assets/tessdata/source.json`.

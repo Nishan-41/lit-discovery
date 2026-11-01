@@ -158,6 +158,4 @@ Unit tests use controlled responses, temporary files, and generated PDFs. They d
 
 ## License and citation
 
-Project source is available under the [Apache License 2.0](LICENSE); see [NOTICE](NOTICE) for attribution. Bundled OCR model attribution is documented [with the model](codex/chem-mat-hub/assets/tessdata/LICENSE); third-party dependencies retain their own licenses. If this tool supports your work, use [CITATION.cff](CITATION.cff).
-
-Earlier revisions were published under MIT. This license change does not withdraw permissions granted for those revisions.
+Project source is available under the [Apache License 2.0](LICENSE); see [NOTICE](NOTICE) for attribution. Bundled OCR model attribution is included in NOTICE, with [pinned model provenance](codex/chem-mat-hub/assets/tessdata/source.json); third-party dependencies retain their own licenses. If this tool supports your work, use [CITATION.cff](CITATION.cff).
