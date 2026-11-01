@@ -35,5 +35,4 @@ research-library/
 *.sqlite*
 *.db
 *.py.bak
-!codex/chem-mat-hub/scripts/openapi.json
 !codex/chem-mat-hub/assets/tessdata/source.json

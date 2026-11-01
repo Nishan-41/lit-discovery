@@ -135,11 +135,6 @@ def cmd_read(args):
         print(sections["experimental_methods"][:800] + "...\n")
 
 
-def cmd_ui(args):
-    from lit_discovery.web_app import run_server
-    run_server(host=args.host, port=args.port)
-
-
 def cmd_materials(args):
     from lit_discovery.materials import query_all_materials
     if not (args.formula or args.elements or args.mof):
@@ -234,11 +229,6 @@ def main():
     p_mat.add_argument("--limit", type=int, default=5, help="Max items per database (default: 5)")
     p_mat.add_argument("--json", action="store_true", help="Output as raw JSON")
 
-    # UI
-    p_ui = subparsers.add_parser("ui", help="Launch interactive browser Web UI")
-    p_ui.add_argument("--host", default="127.0.0.1", help="Host address (default: 127.0.0.1)")
-    p_ui.add_argument("--port", type=int, default=8000, help="Port (default: 8000)")
-
     args = parser.parse_args()
 
     if not args.command:
@@ -254,8 +244,6 @@ def main():
         cmd_read(args)
     elif args.command == "materials":
         cmd_materials(args)
-    elif args.command == "ui":
-        cmd_ui(args)
 
 
 if __name__ == "__main__":

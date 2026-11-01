@@ -2,13 +2,12 @@
 
 # 🔬 LitDiscovery
 
-### The Open-Source Scientific Literature Discovery & Research Intelligence Platform
+### Scientific literature discovery and research intelligence from the command line
 **An open-source, local-first alternative to Elicit, SciSpace, Connected Papers, and Consensus.**
 
 [![CI Test Suite](https://github.com/Nishan-41/lit-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/Nishan-41/lit-discovery/actions)
 [![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100%2B-009688.svg)](https://fastapi.tiangolo.com)
 [![PyMuPDF](https://img.shields.io/badge/PyMuPDF-In--Memory-red.svg)](https://pymupdf.readthedocs.io/)
 [![Engines](https://img.shields.io/badge/Academic%20Engines-12%20Federated-success.svg)](#12-federated-academic-engines)
 [![scite.ai](https://img.shields.io/badge/scite.ai-Smart%20Citations-purple.svg)](https://scite.ai)
@@ -21,7 +20,7 @@
 
 ## 🌟 Executive Summary
 
-**LitDiscovery** is an enterprise-grade, extensible research intelligence engine designed for researchers, scientists, and engineers. It federates **12 academic literature databases concurrently**, resolves **direct legal open-access PDFs** via Unpaywall, validates scientific claims through **scite.ai Smart Citations** (Supporting vs. Contrasting tallies), snowballs citation networks like **Connected Papers**, and extracts experimental recipes and material parameters into a comparative synthesis matrix like **Elicit and SciSpace**—all while running **100% locally with complete data privacy and zero subscription fees**.
+**LitDiscovery** is a command-line research tool for researchers, scientists, and engineers. It federates **12 academic literature databases concurrently**, resolves **direct legal open-access PDFs** via Unpaywall, validates scientific claims through **scite.ai Smart Citations** (Supporting vs. Contrasting tallies), snowballs citation networks like **Connected Papers**, and extracts experimental recipes and material parameters into a comparative synthesis matrix like **Elicit and SciSpace**—with local processing and exports. Searches contact external database services; some providers require API credentials or subscriptions.
 
 ```
                            ┌────────────────────────────────────────┐
@@ -75,7 +74,7 @@
 | **Comparative Synthesis Matrix** | ✅ **Markdown & JSON** | ✅ Web only | ✅ Web only | ❌ | ❌ |
 | **In-Memory PDF Stream Parsing** | ✅ **PyMuPDF (`fitz`)** | Cloud only | Cloud only | ❌ | ❌ |
 | **Official Publisher BibTeX/RIS** | ✅ **Direct DOI Sync** | Limited | Limited | ❌ | ❌ |
-| **Local Web UI & CLI** | ✅ **Both Included** | Web only | Web only | Web only | Web only |
+| **Command-line interface** | ✅ **Included** | Web only | Web only | Web only | Web only |
 | **Privacy & Zero Data Logging** | ✅ **Runs Locally** | ❌ Cloud tracked | ❌ Cloud tracked | ❌ Cloud tracked | ❌ Cloud tracked |
 
 ---
@@ -160,7 +159,7 @@ UNPAYWALL_EMAIL=your_university_email@domain.edu
 
 ## 💻 CLI Usage
 
-The `lit-discovery` CLI gives you terminal superpowers:
+LitDiscovery runs through the CLI. Available commands: `search`, `graph`, `read`, and `materials`.
 
 ```bash
 # 1. Search across 12 literature engines with Elicit-style synthesis
@@ -178,33 +177,11 @@ lit-discovery read "10.1038/nature12373" --pages 20
 # 5. Query zero-authentication structural materials repositories (OQMD, C2DB, MOFdb, MP)
 lit-discovery materials --formula "MoS2"
 lit-discovery materials --mof "UiO-66"
-
-# 6. Launch the interactive browser Web UI
-lit-discovery ui --port 8000
 ```
 
 ---
 
-## 🖥️ Interactive Web UI
-
-Launch the embedded responsive Web UI with a single command:
-
-```bash
-lit-discovery ui
-```
-
-Navigate to `http://localhost:8000`:
-
-- 🔍 **Federated Search**: Search across 12 academic engines concurrently.
-- 📊 **Comparative Synthesis Matrix**: Side-by-side table comparing host polymers, electrolytes, conductivity, and thermal stability.
-- 🟢 **scite.ai Badges**: Live indicators of supporting vs. contrasting citations.
-- 📥 **1-Click Export**: Download `.bib` and `.ris` files instantly for your reference manager.
-- 🕸️ **Citation Graph Explorer**: Interactive snowballing for seed papers.
-- 📖 **Deep Reader**: Stream full-text PDFs and inspect recipe parameters in real time.
-
----
-
-## 🐍 Python API Usage
+## 🐍 Python Library Usage
 
 Use LitDiscovery as a Python library in your own research workflows:
 

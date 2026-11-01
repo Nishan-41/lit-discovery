@@ -5,7 +5,7 @@ description: Search chemistry, materials, ionic-liquid and literature databases 
 
 # Chem-Mat-Hub for Codex
 
-Use the bundled engine directly through local Python. No Antigravity agent, cloud Action server or OpenAI API key is needed. Existing database APIs and curated data remain available. Resolve script paths relative to this skill directory; use absolute paths in commands when working elsewhere.
+Use the bundled engine directly through local Python. No hosted service or OpenAI API key is needed. Existing database APIs and curated data remain available. Resolve script paths relative to this skill directory; use absolute paths in commands when working elsewhere.
 
 ## Run
 
@@ -45,7 +45,7 @@ Read [database and engineering reference](references/original-skill.md) for deta
 
 The engine loads process environment first, then optional `CHEM_MAT_HUB_ENV_FILE`, then existing `~/.env`. Do not copy or print secret values. Key variables: `MP_API_KEY`, `RSC_API_KEY`, `SCOPUS_API_KEY` / `ELSEVIER_API_KEY`, `CTX_API_KEY` / `EPA_API_KEY`, `S2_API_KEY` / `SEMANTIC_SCHOLAR_API_KEY`, `CORE_API_KEY`. A configured key is not proof of valid authentication or entitlement. Missing Materials Project key uses its OPTIMADE fallback.
 
-Dependencies: requests, beautifulsoup4, python-dotenv, pymupdf, CoolProp. FastAPI and uvicorn are only for the optional retained Action bridge. Keep that bridge stopped unless hosting is requested. Preserve the original Gemini skill and research repository unless edits there are explicitly requested.
+Dependencies: requests, beautifulsoup4, python-dotenv, pymupdf, CoolProp. This distribution provides command-line tools only. Preserve the original Gemini skill and research repository unless edits there are explicitly requested.
 
 ## Interpret results
 
@@ -84,7 +84,7 @@ Retrieval caps and result selection limits are explicit. Provider page/budget li
 
 When result is `browser_required` or `fulltext_unavailable`, follow `browser_handoff` using available browser tools in the user's existing browser session. Open publisher page, use institution's proxy/OpenAthens link generator when needed, and download the main paper through the site's normal controls. User completes NetID/MFA when prompted. Do not extract browser cookies or ask for passwords. Browser access is an agent workflow, not a Python login implementation. After download, call `--deep-read` with the actual local PDF path and verify extracted pages. If browser download tools are unavailable, report that specific limitation and request the downloaded PDF. Do not claim reading full text until extraction succeeds. No publisher subscription access has been proven merely by adding this resolver.
 
-Full-text collection: add `--fetch-fulltext 5 --pdf-dir <library-directory>` to `--literature` to fetch a bounded selection serially (maximum 20). Each readable paper gets a PDF, evidence JSON and checksum; `manifest.json` records successes, failures and browser handoffs. Rerunning reuses existing local PDFs. An existing different PDF is never overwritten. Inspect selected paper relevance before a large collection. For one paper use `--deep-read <DOI-or-URL> --save-pdf <paper.pdf>`. These local save options are CLI-only, not exposed by the HTTP bridge.
+Full-text collection: add `--fetch-fulltext 5 --pdf-dir <library-directory>` to `--literature` to fetch a bounded selection serially (maximum 20). Each readable paper gets a PDF, evidence JSON and checksum; `manifest.json` records successes, failures and browser handoffs. Rerunning reuses existing local PDFs. An existing different PDF is never overwritten. Inspect selected paper relevance before a large collection. For one paper use `--deep-read <DOI-or-URL> --save-pdf <paper.pdf>`. These local save options are available through the CLI.
 
 Unpaywall contact transmission is opt-in via `CHEM_MAT_HUB_UNPAYWALL_EMAIL`; no hardcoded personal address is sent by the overlay. Set that value only after user authorizes sending that contact to Unpaywall. Publisher/Crossref retrieval remains available without it. `network_error` means transport failure, not absence of a paper or lack of institutional subscription.
 

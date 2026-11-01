@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "lit-discovery"
 version = "1.0.0"
-description = "Standalone Scientific Literature Discovery, Empirical Consensus & Research Intelligence App"
+description = "Command-line scientific literature discovery and research intelligence"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
@@ -41,9 +41,7 @@ dependencies = [
     "requests>=2.28.0",
     "beautifulsoup4>=4.11.0",
     "python-dotenv>=1.0.0",
-    "pymupdf>=1.23.0",
-    "fastapi>=0.100.0",
-    "uvicorn>=0.20.0"
+    "pymupdf>=1.23.0"
 ]
 
 [project.optional-dependencies]

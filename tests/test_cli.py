@@ -17,4 +17,14 @@ def test_cli_help():
     assert "search" in res.stdout
     assert "graph" in res.stdout
     assert "read" in res.stdout
-    assert "ui" in res.stdout
+    assert "materials" in res.stdout
+    assert "{search,graph,read,materials}" in res.stdout
+
+
+def test_cli_rejects_removed_ui_command():
+    res = subprocess.run(
+        [sys.executable, "-m", "lit_discovery.cli", "ui"],
+        capture_output=True, text=True,
+    )
+    assert res.returncode == 2
+    assert "invalid choice" in res.stderr

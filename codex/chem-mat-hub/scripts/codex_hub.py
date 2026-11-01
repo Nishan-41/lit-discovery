@@ -133,7 +133,7 @@ def doctor():
     return {'python': sys.executable,
             'credentials': {k: bool(getattr(hub, k)) for k in keys},
             'dependencies': {m: bool(importlib.util.find_spec(m)) for m in
-                             ['requests', 'bs4', 'dotenv', 'fitz', 'CoolProp', 'fastapi']},
+                             ['requests', 'bs4', 'dotenv', 'fitz', 'CoolProp']},
             'environment_override_configured': bool(os.getenv('CHEM_MAT_HUB_ENV_FILE')),
             'sources': list(SOURCES),
             'cache_directory': str(TRANSPORT.cache_path.parent),
