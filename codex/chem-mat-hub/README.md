@@ -31,4 +31,4 @@ Keep library data, subscription PDFs, evidence, notes and credentials outside Gi
 python -m pytest --rootdir . --confcutdir tests tests -q
 ```
 
-Tests use local fixtures and mocked network calls. Bundled English OCR model is distributed under Apache 2.0; see `assets/tessdata/LICENSE` and pinned source/checksum in `assets/tessdata/source.json`. Skill source follows repository license.
+Tests use local fixtures and mocked network calls. Bundled English OCR model is distributed under Apache 2.0; see `assets/tessdata/LICENSE` and pinned source/checksum in `assets/tessdata/source.json`. Skill source is licensed under Apache-2.0; see `LICENSE` and `NOTICE`.

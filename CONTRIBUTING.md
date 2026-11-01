@@ -28,3 +28,5 @@ For the optional research bundle, install `codex/chem-mat-hub/requirements.txt` 
 - Keep user-facing prose factual. Do not present heuristic matches, extraction candidates, or citation tallies as scientific validation.
 
 Run `git diff --check` and the relevant test suites. CI also builds the distribution. This repository accepts CLI and Python-library improvements; there is no web frontend or hosted API.
+
+Unless explicitly stated otherwise, contributions are submitted under the project's Apache-2.0 license.

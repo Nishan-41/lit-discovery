@@ -9,7 +9,7 @@ Search across research databases. Explore citation networks. Turn papers into in
 [![CLI tests](https://github.com/rehan-hasnain/lit-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/rehan-hasnain/lit-discovery/actions/workflows/ci.yml)
 [![Research skill tests](https://github.com/rehan-hasnain/lit-discovery/actions/workflows/codex-skill.yml/badge.svg)](https://github.com/rehan-hasnain/lit-discovery/actions/workflows/codex-skill.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
-[![License](https://img.shields.io/badge/License-MIT-64748B)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache--2.0-64748B)](LICENSE)
 
 [Quick start](#quick-start) | [Offline demo](#try-it-without-api-keys) | [Architecture](docs/architecture.md) | [Contributing](CONTRIBUTING.md)
 
@@ -158,4 +158,6 @@ Unit tests use controlled responses, temporary files, and generated PDFs. They d
 
 ## License and citation
 
-Project source is available under the [MIT License](LICENSE). Bundled OCR model attribution is documented [with the model](codex/chem-mat-hub/assets/tessdata/LICENSE); third-party dependencies retain their own licenses. If this tool supports your work, use [CITATION.cff](CITATION.cff).
+Project source is available under the [Apache License 2.0](LICENSE); see [NOTICE](NOTICE) for attribution. Bundled OCR model attribution is documented [with the model](codex/chem-mat-hub/assets/tessdata/LICENSE); third-party dependencies retain their own licenses. If this tool supports your work, use [CITATION.cff](CITATION.cff).
+
+Earlier revisions were published under MIT. This license change does not withdraw permissions granted for those revisions.

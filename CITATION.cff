@@ -6,7 +6,7 @@ authors:
     given-names: "Rehan"
 version: 1.0.0
 url: "https://github.com/rehan-hasnain/lit-discovery"
-license: MIT
+license: Apache-2.0
 keywords:
   - "literature discovery"
   - "scientific computing"

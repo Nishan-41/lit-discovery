@@ -1,0 +1,8 @@
+LitDiscovery
+Copyright (c) 2026 Rehan & Lab Contributors, University of Arizona
+
+This project is licensed under the Apache License, Version 2.0.
+
+The bundled English OCR model retains its own Apache-2.0 license and
+provenance records under codex/chem-mat-hub/assets/tessdata/.
+Third-party dependencies retain their respective licenses and notices.
