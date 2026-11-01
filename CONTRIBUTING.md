@@ -5,7 +5,7 @@ Contributions should improve a reproducible command-line research workflow: sour
 ## Set up
 
 ```bash
-git clone https://github.com/Nishan-41/lit-discovery.git
+git clone https://github.com/rehan-hasnain/lit-discovery.git
 cd lit-discovery
 python -m venv .venv
 # Activate .venv for your shell, then:

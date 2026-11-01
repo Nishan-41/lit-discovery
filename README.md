@@ -6,8 +6,8 @@
 
 Search across research databases. Explore citation networks. Turn papers into inspectable records and reusable references.
 
-[![CLI tests](https://github.com/Nishan-41/lit-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/Nishan-41/lit-discovery/actions/workflows/ci.yml)
-[![Research skill tests](https://github.com/Nishan-41/lit-discovery/actions/workflows/codex-skill.yml/badge.svg)](https://github.com/Nishan-41/lit-discovery/actions/workflows/codex-skill.yml)
+[![CLI tests](https://github.com/rehan-hasnain/lit-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/rehan-hasnain/lit-discovery/actions/workflows/ci.yml)
+[![Research skill tests](https://github.com/rehan-hasnain/lit-discovery/actions/workflows/codex-skill.yml/badge.svg)](https://github.com/rehan-hasnain/lit-discovery/actions/workflows/codex-skill.yml)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
 [![License](https://img.shields.io/badge/License-MIT-64748B)](LICENSE)
 
@@ -39,7 +39,7 @@ No web application, hosted API, or OpenAI API key is required. Database queries 
 Requires **Python 3.10+**. Tested in CI on Python 3.10, 3.12, and 3.14.
 
 ```bash
-git clone https://github.com/Nishan-41/lit-discovery.git
+git clone https://github.com/rehan-hasnain/lit-discovery.git
 cd lit-discovery
 python -m venv .venv
 ```
